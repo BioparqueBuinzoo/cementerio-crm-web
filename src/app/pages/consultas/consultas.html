@@ -1,0 +1,33 @@
+<div class="consultas-container">
+  <div class="consultas-header">
+    <div class="consultas-title">
+      <div class="title-icon">
+        <re-icon name="search" width="20" height="20"></re-icon>
+      </div>
+      <div class="title-text">
+        <h1>Consultas</h1>
+        <span>Reportes y consultas del cementerio</span>
+      </div>
+    </div>
+    <nav class="consultas-tabs">
+      <a routerLink="sepulturas-por-vencer" routerLinkActive="active" class="consultas-tab">
+        Sepulturas por vencer
+      </a>
+      <a routerLink="sepulturas-recien-vencidas" routerLinkActive="active" class="consultas-tab">
+        Sepulturas recién vencidas
+      </a>
+      <a routerLink="sepulturas-vencidas" routerLinkActive="active" class="consultas-tab">
+        Sepulturas vencidas
+      </a>
+      <a routerLink="clientes-sin-rut" routerLinkActive="active" class="consultas-tab">
+        Clientes sin RUT
+      </a>
+      <a routerLink="clientes-rut-duplicados" routerLinkActive="active" class="consultas-tab">
+        Clientes RUT duplicados
+      </a>
+    </nav>
+  </div>
+  <div class="consultas-content" [@tabAnimation]="getTabKey(tabOutlet)">
+    <router-outlet #tabOutlet="outlet" />
+  </div>
+</div>

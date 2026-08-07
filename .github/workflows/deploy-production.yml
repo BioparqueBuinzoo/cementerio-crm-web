@@ -1,0 +1,243 @@
+name: Deploy production
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cementerio-crm-web-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate and package
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      archive: ${{ steps.release.outputs.archive }}
+    steps:
+      - name: Require a version tag
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" != "tag" || ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "El despliegue requiere seleccionar o publicar un tag vX.Y.Z" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Validate release version
+        id: release
+        shell: bash
+        run: |
+          VERSION="$(node --print "require('./package.json').version")"
+          if [[ "v${VERSION}" != "${GITHUB_REF_NAME}" ]]; then
+            echo "El tag ${GITHUB_REF_NAME} no coincide con package.json (${VERSION})" >&2
+            exit 1
+          fi
+          ARCHIVE="cementerio-crm-web-${VERSION}.tar.gz"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "archive=${ARCHIVE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test -- --watch=false
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      - name: Package runtime artifact
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.release.outputs.archive }}
+        run: |
+          tar --create --gzip --file "${ARCHIVE}" \
+            dist ecosystem.config.cjs package.json package-lock.json scripts
+          sha256sum "${ARCHIVE}" > "${ARCHIVE}.sha256"
+
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cementerio-crm-web-${{ steps.release.outputs.version }}
+          path: |
+            ${{ steps.release.outputs.archive }}
+            ${{ steps.release.outputs.archive }}.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    name: Deploy to production
+    needs: build
+    runs-on: [self-hosted, Linux, X64, cementerio-crm-web-production]
+    environment: production
+    timeout-minutes: 15
+    env:
+      DEPLOY_BASE_PATH: ${{ vars.DEPLOY_BASE_PATH || '/opt/servicios/cementerio-crm-web' }}
+      NODE_BIN_PATH: ${{ vars.NODE_BIN_PATH }}
+      PM2_APP_NAME: cementerio-crm-web
+      VERSION: ${{ needs.build.outputs.version }}
+      ARCHIVE: ${{ needs.build.outputs.archive }}
+    steps:
+      - name: Download runtime artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: cementerio-crm-web-${{ needs.build.outputs.version }}
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          for name in DEPLOY_BASE_PATH NODE_BIN_PATH; do
+            if [[ -z "${!name}" ]]; then
+              echo "Falta configurar ${name} en el environment production" >&2
+              exit 1
+            fi
+          done
+          sha256sum --check "${ARCHIVE}.sha256"
+
+      - name: Activate release with automatic rollback
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          BASE_PATH="${DEPLOY_BASE_PATH}"
+          RELEASE_NAME="${VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ARCHIVE_PATH="${GITHUB_WORKSPACE}/${ARCHIVE}"
+          RELEASE_PATH="${BASE_PATH}/releases/${RELEASE_NAME}"
+          CURRENT_LINK="${BASE_PATH}/current"
+
+          if [[ "${BASE_PATH}" != /* || "${BASE_PATH}" == "/" ]]; then
+            echo "DEPLOY_BASE_PATH debe ser una ruta absoluta y no puede ser /" >&2
+            exit 1
+          fi
+          if [[ ! "${RELEASE_NAME}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]+$ ]]; then
+            echo "Nombre de release inválido" >&2
+            exit 1
+          fi
+          if [[ ! "${ARCHIVE}" =~ ^cementerio-crm-web-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz$ \
+            || "${ARCHIVE_PATH}" != "${GITHUB_WORKSPACE}/"* ]]; then
+            echo "Nombre o ruta de artefacto inválidos" >&2
+            exit 1
+          fi
+          if [[ "${NODE_BIN_PATH}" != /* || "${NODE_BIN_PATH}" == "/" ]]; then
+            echo "NODE_BIN_PATH debe ser una ruta absoluta y no puede ser /" >&2
+            exit 1
+          fi
+          if [[ ! "${PM2_APP_NAME}" =~ ^[A-Za-z0-9_.@-]+$ ]]; then
+            echo "Nombre de aplicación PM2 inválido" >&2
+            exit 1
+          fi
+
+          export PATH="${NODE_BIN_PATH}:${PATH}"
+          command -v node >/dev/null
+          command -v pm2 >/dev/null
+
+          PREVIOUS_RELEASE=""
+          if [[ -L "${CURRENT_LINK}" ]]; then
+            PREVIOUS_RELEASE="$(readlink -f "${CURRENT_LINK}" 2>/dev/null || true)"
+          fi
+
+          rollback() {
+            status=$?
+            trap - ERR
+            echo "El despliegue falló; ejecutando rollback" >&2
+            if [[ -n "${PREVIOUS_RELEASE}" && -d "${PREVIOUS_RELEASE}" ]]; then
+              ln -sfn "${PREVIOUS_RELEASE}" "${CURRENT_LINK}"
+              pm2 delete "${PM2_APP_NAME}" || true
+              pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --only "${PM2_APP_NAME}" --update-env
+            else
+              rm -f "${CURRENT_LINK}"
+              pm2 delete "${PM2_APP_NAME}" || true
+            fi
+            rm -rf "${RELEASE_PATH}"
+            exit "${status}"
+          }
+          trap rollback ERR
+
+          if [[ ! -f "${ARCHIVE_PATH}" ]]; then
+            echo "No se encontró el artefacto ${ARCHIVE_PATH}" >&2
+            false
+          fi
+          if [[ -e "${RELEASE_PATH}" ]]; then
+            echo "La release ${RELEASE_PATH} ya existe" >&2
+            false
+          fi
+
+          mkdir -p "${RELEASE_PATH}"
+          tar --extract --gzip --file "${ARCHIVE_PATH}" --directory "${RELEASE_PATH}"
+          cd "${RELEASE_PATH}"
+          npm install --omit=dev
+
+          ln -sfn "${RELEASE_PATH}" "${CURRENT_LINK}"
+          # pm2 startOrReload/reload no actualiza cwd/exec_path de un proceso ya
+          # registrado con ese nombre. Por eso se borra y se arranca de nuevo en
+          # cada despliegue (mismo patrón que cementerio-pay-web).
+          pm2 delete "${PM2_APP_NAME}" || true
+          pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --only "${PM2_APP_NAME}" --update-env
+
+          healthy=false
+          for _attempt in {1..15}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4200/ >/dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 2
+          done
+          if [[ "${healthy}" != "true" ]]; then
+            echo "El healthcheck no respondió correctamente" >&2
+            false
+          fi
+
+          trap - ERR
+          echo "Release ${RELEASE_NAME} desplegada correctamente"
+
+  notify:
+    name: Notify production
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+      SMTP_SECURE: ${{ vars.SMTP_SECURE || 'false' }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_FROM: ${{ secrets.SMTP_FROM }}
+      DEPLOY_NOTIFICATION_TO: ${{ secrets.DEPLOY_NOTIFICATION_TO }}
+      DEPLOY_VERSION: ${{ needs.build.outputs.version }}
+      DEPLOY_SHA: ${{ github.sha }}
+      DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      DEPLOY_ACTOR: ${{ github.actor }}
+      DEPLOY_COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install production dependencies
+        run: npm ci --omit=dev
+
+      - name: Send deployment email
+        run: node scripts/send-deployment-email.mjs

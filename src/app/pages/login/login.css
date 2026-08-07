@@ -1,0 +1,239 @@
+.login-wrapper {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+/* Panel izquierdo: Branding con foto de fondo */
+.login-brand {
+  flex: 0 0 55%;
+  background-image: url('/logos/parque-01.jpg');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+}
+
+.brand-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(171, 184, 195, 0.85);
+  z-index: 1;
+}
+
+.brand-decoration {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  width: 120px;
+  opacity: 0.15;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.brand-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: 2rem;
+}
+
+.brand-logo {
+  max-width: 360px;
+  width: 100%;
+}
+
+.brand-logo img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.08));
+}
+
+.brand-footer {
+  padding: 1.5rem 0;
+  text-align: center;
+  position: relative;
+  z-index: 3;
+}
+
+.brand-footer span {
+  font-size: 0.8125rem;
+  color: #4b5563;
+}
+
+/* Panel derecho: Formulario */
+.login-form-panel {
+  flex: 0 0 45%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-form-content {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.form-header p {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Boton Microsoft */
+.btn-microsoft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-microsoft:hover:not(:disabled) {
+  border-color: #1d7021;
+  color: #1d7021;
+  box-shadow: 0 4px 12px rgba(29, 112, 33, 0.1);
+}
+
+.btn-microsoft:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn-microsoft:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.microsoft-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Error */
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+}
+
+/* Sin rol */
+.login-sin-rol {
+  display: flex;
+  gap: 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.625rem;
+  padding: 1rem 1.125rem;
+}
+
+.sin-rol-icon {
+  flex-shrink: 0;
+  color: #2563eb;
+  padding-top: 2px;
+}
+
+.sin-rol-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sin-rol-body strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.sin-rol-body p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #3b82f6;
+  line-height: 1.5;
+}
+
+/* Footer del panel derecho */
+.form-footer {
+  text-align: center;
+}
+
+.form-footer span {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+  }
+
+  .login-brand {
+    flex: none;
+    padding: 2rem 1rem 1.5rem;
+  }
+
+  .brand-content {
+    flex: none;
+    padding: 1rem;
+  }
+
+  .brand-logo {
+    max-width: 200px;
+  }
+
+  .brand-decoration {
+    width: 80px;
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .brand-footer {
+    padding: 0.75rem 0 0;
+  }
+
+  .login-form-panel {
+    flex: 1;
+    padding: 2rem 1.5rem;
+  }
+}

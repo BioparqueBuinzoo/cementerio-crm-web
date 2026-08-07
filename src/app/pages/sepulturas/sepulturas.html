@@ -1,0 +1,117 @@
+<div #sepulturasContainer class="sepulturas-container">
+  <div class="sepulturas-header">
+    <div class="header-left">
+      <a routerLink="/asis" class="btn-back" title="Volver al inicio">
+        <re-icon name="chevron-left" width="20" height="20"></re-icon>
+      </a>
+      <div class="sepulturas-title">
+      <re-icon name="paw" class="header-brand-icon" width="32" height="32"></re-icon>
+      <div class="title-text">
+        <h1>Sepulturas</h1>
+        <span>Registro y control de sepulturas</span>
+      </div>
+    </div>
+    </div><!-- /header-left -->
+    <div class="sepulturas-actions">
+      <div class="rut-search-group">
+        <div class="sepulturas-search">
+          <re-icon name="search" class="search-icon" width="20" height="20"></re-icon>
+          <input class="search-input" type="text" placeholder="Buscar por Nº ficha…"
+            [value]="fichaInput()"
+            (input)="fichaInput.set($any($event.target).value)"
+            (keydown)="onKeydown($event)" />
+        </div>
+        <button class="btn-search" (click)="buscar()">Buscar</button>
+        @if (fichaInput()) {
+          <button class="btn-clear" (click)="limpiar()" title="Limpiar búsqueda">✕</button>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="sepulturas-error">
+      <span>{{ error() }}</span>
+      <button (click)="retry()" class="retry-btn">Reintentar</button>
+    </div>
+  } @else {
+    <div #tableWrapper class="table-wrapper table-wrapper-with-loading">
+      @if (loading() && sepulturas().length === 0) {
+        <div class="table-loading-inner">
+          <div class="spinner"></div>
+          <span>Cargando sepulturas...</span>
+        </div>
+      } @else {
+        @if (loading()) {
+          <div class="table-loading-overlay" aria-busy="true">
+            <div class="spinner spinner-overlay"></div>
+            <span>Cargando...</span>
+          </div>
+        }
+        <table class="sepulturas-table">
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Cliente / RUT</th>
+              <th>Nº Ficha</th>
+              <th>Tipo</th>
+              <th>Ub. vieja</th>
+              <th>Ub. nueva</th>
+              <th>Estado</th>
+              <th>Ir a ficha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of sepulturas(); track s.id) {
+              <tr class="row-clickable" (dblclick)="irACliente(s.id_cliente)">
+                <td>{{ s.id }}</td>
+                <td>
+                  <a [routerLink]="['/asis/clientes', s.id_cliente]" class="cell-link">{{ s.rut_cliente || s.id_cliente }}</a>
+                </td>
+                <td>{{ s.numero_ficha }}</td>
+                <td>{{ s.tipo || '—' }}</td>
+                <td>{{ s.ubicacion_vieja || '—' }}</td>
+                <td>{{ s.ubicacion_nueva || '—' }}</td>
+                <td><span class="badge" [class]="'badge-' + (s.estado || '').toLowerCase().replace(' ', '-')">{{ s.estado || '—' }}</span></td>
+                <td class="col-actions">
+                  <a [routerLink]="['/asis/clientes', s.id_cliente]" class="btn-link-ficha" title="Ir a ficha del cliente">
+                    <re-icon name="arrow-right" width="16" height="16"></re-icon>
+                  </a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty-row">
+                  No hay sepulturas registradas
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+    <div class="card-footer">
+      <span class="record-count">{{ total() }} sepultura(s) en total</span>
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="pag-btn pag-nav" (click)="changePage(1)" [disabled]="page() === 1 || loading()" title="Primera">
+            <re-icon name="chevrons-left-solid" width="13" height="13"></re-icon>
+          </button>
+          <button class="pag-btn pag-nav" (click)="changePage(page() - 1)" [disabled]="page() === 1 || loading()">
+            <re-icon name="chevron-left-solid" width="13" height="13"></re-icon>
+          </button>
+          @for (p of pageNumbers(); track $index) {
+            @if (p === null) { <span class="pag-ellipsis">…</span> }
+            @else { <button class="pag-btn pag-num" [class.pag-active]="p === page()" [disabled]="loading()" (click)="changePage(p)">{{ p }}</button> }
+          }
+          <button class="pag-btn pag-nav" (click)="changePage(page() + 1)" [disabled]="page() === totalPages() || loading()">
+            <re-icon name="chevron-right-solid" width="13" height="13"></re-icon>
+          </button>
+          <button class="pag-btn pag-nav" (click)="changePage(totalPages())" [disabled]="page() === totalPages() || loading()" title="Última">
+            <re-icon name="chevrons-right-solid" width="13" height="13"></re-icon>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

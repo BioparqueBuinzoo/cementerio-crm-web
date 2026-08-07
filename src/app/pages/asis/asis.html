@@ -1,0 +1,124 @@
+<div class="dashboard-container">
+  <!-- Sidebar -->
+  <!-- CAMBIO: isSidebarOpen → isSidebarOpen() — es un Signal, se lee como función -->
+  <aside class="sidebar" [class.sidebar-collapsed]="!isSidebarOpen()">
+    <div class="sidebar-header">
+      <div class="logo">
+        <img class="logo-img" src="logos/logo-parque-asis.svg" alt="Parque de Asis">
+      </div>
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() en ambos @if -->
+        @if (isSidebarOpen()) {
+          <re-icon name="chevron-left" width="18" height="18"></re-icon>
+        } @else {
+          <re-icon name="chevron-right" width="18" height="18"></re-icon>
+        }
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- INICIO -->
+      <a routerLink="/asis" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+        <span class="nav-icon">
+          <re-icon name="home" width="20" height="20"></re-icon>
+        </span>
+        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() — mismo patrón en todos los nav-item -->
+        @if (isSidebarOpen()) { <span class="nav-text">INICIO</span> }
+      </a>
+      <!-- CLIENTES -->
+      <a routerLink="/asis/clientes" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">
+          <re-icon name="users-alt" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">CLIENTES</span> }
+      </a>
+      <!-- SEPULTURAS -->
+      <a routerLink="/asis/sepulturas" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">
+          <re-icon name="grid" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">SEPULTURAS</span> }
+      </a>
+      <!-- MASCOTAS -->
+      <a routerLink="/asis/mascotas" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">
+          <re-icon name="paw" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">MASCOTAS</span> }
+      </a>
+      <!-- CONTRATOS POR VENCER -->
+      <a routerLink="/asis/contratos-por-vencer" routerLinkActive="active" class="nav-item nav-item-warning">
+        <span class="nav-icon">
+          <re-icon name="clock" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">POR VENCER</span> }
+      </a>
+      <!-- CONTRATOS VENCIDOS -->
+      <a routerLink="/asis/contratos-vencidos" routerLinkActive="active" class="nav-item nav-item-danger">
+        <span class="nav-icon">
+          <re-icon name="alert" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">VENCIDOS</span> }
+      </a>
+      <!-- CONFIGURACION -->
+      <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">
+          <re-icon name="settings" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">CONFIGURACION</span> }
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <span class="user-icon">
+          <re-icon name="user" width="22" height="22"></re-icon>
+        </span>
+        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() -->
+        @if (isSidebarOpen()) {
+          <div class="user-details">
+
+            <span class="user-name">{{ auth.currentUser()?.name }}</span>
+            <span class="user-email">{{ auth.currentUser()?.email }}</span>
+            <span class="user-role" [class.user-role-none]="auth.userRoles().length === 0">
+              {{ getUserRoleDisplay() }}
+            </span>
+          </div>
+        }
+      </div>
+
+      @if (isSidebarOpen()) {
+        <button class="logout-btn notif-email-btn" disabled title="Notificaciones por correo (próximamente)">
+          <span class="logout-icon">
+            <re-icon name="mail" width="18" height="18"></re-icon>
+          </span>
+          <span class="logout-text">Notificaciones correo</span>
+        </button>
+      }
+
+      <!-- CAMBIO: isSidebarOpen → isSidebarOpen() en el binding de [title] -->
+      <button class="logout-btn" (click)="logout()" [title]="isSidebarOpen() ? '' : 'Cerrar Sesion'">
+        <span class="logout-icon">
+          <re-icon name="log-out" width="18" height="18"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="logout-text">Cerrar Sesion</span> }
+      </button>
+
+      @if (isSidebarOpen()) {
+        <div class="app-version">
+          <span>v{{ appVersion }}</span>
+        </div>
+      }
+    </div>
+  </aside>
+  <main class="main-content">
+    <router-outlet />
+    <footer class="app-footer" aria-hidden="false">
+      <div class="app-footer-inner">
+        <span class="app-footer-version">Versión v{{ appVersion }}</span>
+        <span class="app-footer-sep">·</span>
+        <span class="app-footer-author">Desarrollado por el Departamento de Informática</span>
+      </div>
+    </footer>
+  </main>
+</div>

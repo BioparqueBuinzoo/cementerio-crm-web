@@ -1,0 +1,493 @@
+<div class="inicio-container">
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="inicio-header">
+    <div class="header-brand">
+      <div class="brand-logo-wrap">
+        <img class="brand-logo" src="logos/logo-parque-asis.svg" alt="Parque de Asis" width="56" height="56" loading="eager">
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">Parque de Asis</h1>
+        <p class="brand-subtitle">Sistema de Gestión — Cementerio de Mascotas</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Stats ──────────────────────────────────────────── -->
+  <div class="stats-grid">
+    @if (statsService.loading()) {
+      @for (stat of stats; track stat.label) {
+        <div class="stat-card stat-card-skeleton">
+          <div class="stat-icon-wrap stat-icon-skeleton"></div>
+          <div class="stat-info">
+            <span class="stat-value stat-value-skeleton"></span>
+            <span class="stat-label stat-label-skeleton"></span>
+          </div>
+        </div>
+      }
+    } @else {
+      @for (stat of stats; track stat.label) {
+        <a [routerLink]="stat.route" class="stat-card" [attr.data-icon]="stat.icon">
+          <div class="stat-icon-wrap">
+            <re-icon [attr.name]="stat.icon" width="40" height="40"></re-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        </a>
+      }
+    }
+  </div>
+
+  <!-- ── Accesos rápidos ────────────────────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <re-icon name="zap" width="15" height="15"></re-icon>
+      Accesos rápidos
+    </div>
+    <div class="shortcuts-grid">
+
+      <button (click)="abrirModal()" class="shortcut-card">
+        <div class="shortcut-icon">
+          <re-icon name="user-plus" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">Crear cliente</span>
+          <span class="shortcut-desc">Registrar un nuevo cliente</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+      <button (click)="abrirBuscarNombre()" class="shortcut-card">
+        <div class="shortcut-icon">
+          <re-icon name="user-minus" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">Buscar por nombre</span>
+          <span class="shortcut-desc">Buscar por nombre y apellidos</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+      <button (click)="abrirBuscarFicha()" class="shortcut-card">
+        <div class="shortcut-icon">
+          <re-icon name="file-text" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">Buscar por ficha</span>
+          <span class="shortcut-desc">Buscar sepultura por N° de ficha</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+      <button (click)="abrirBuscarCliente()" class="shortcut-card">
+        <div class="shortcut-icon">
+          <re-icon name="search" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">Buscar cliente</span>
+          <span class="shortcut-desc">Buscar por RUT</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+      <button (click)="exportarExcel('por-vencer')" class="shortcut-card"
+        [disabled]="exportando.pv || pvTotal === 0">
+        <div class="shortcut-icon shortcut-icon-warning">
+          <re-icon name="download" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">{{ exportando.pv ? 'Descargando…' : 'Exportar por vencer' }}</span>
+          <span class="shortcut-desc">Contratos próximos 90 días</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+      <button (click)="exportarExcel('vencidas')" class="shortcut-card"
+        [disabled]="exportando.vd || vdTotal === 0">
+        <div class="shortcut-icon shortcut-icon-danger">
+          <re-icon name="download" width="18" height="18"></re-icon>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-label">{{ exportando.vd ? 'Descargando…' : 'Exportar vencidos' }}</span>
+          <span class="shortcut-desc">Contratos vencidos</span>
+        </div>
+        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ── Vencimientos ───────────────────────────────────── -->
+  <div class="section-block">
+    <div class="section-header">
+      <re-icon name="clock" width="15" height="15"></re-icon>
+      Vencimientos de contratos
+    </div>
+
+    <div class="venc-grid">
+
+      <!-- Por vencer -->
+      <div class="venc-panel venc-panel-warning">
+        <div class="venc-panel-header">
+          <a routerLink="/asis/contratos-por-vencer" class="venc-panel-header-link">
+            <div class="venc-panel-title">
+              <re-icon name="clock" width="14" height="14"></re-icon>
+              Por vencer
+              <span class="venc-count">{{ pvTotal }}</span>
+            </div>
+            <div class="venc-header-right">
+              <span class="venc-subtitle">Próximos 90 días</span>
+              <re-icon name="arrow-right" class="venc-goto" width="13" height="13"></re-icon>
+            </div>
+          </a>
+        </div>
+
+        @if (pvLoading) {
+          <div class="venc-loading"><div class="venc-spinner"></div>Cargando...</div>
+        } @else if (pvData.length === 0) {
+          <div class="venc-empty">
+            <re-icon name="check-circle" width="32" height="32"></re-icon>
+            <span>Sin contratos por vencer</span>
+          </div>
+        } @else {
+          <div class="venc-table-wrap">
+            <table class="venc-table">
+              <thead>
+                <tr>
+                  <th>Ficha</th><th>Tipo</th><th>Cliente</th><th>Vence</th><th>Días</th><th>Último pago</th><th>Próximo pago</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of pvData; track item.id_sepultura) {
+                  <tr>
+                    <td class="venc-ficha">#{{ item.numero_ficha }}</td>
+                    <td class="venc-tipo">{{ item.tipo }}</td>
+                    <td class="venc-cliente">{{ item.nombre_cliente }}</td>
+                    <td class="venc-fecha">{{ formatFecha(item.fecha_vencimiento) }}</td>
+                    <td><span class="dias-badge dias-warning">{{ formatDias(item.dias_restantes) }}</span></td>
+                    <td class="venc-monto">{{ formatCLP(item.valor_renovacion) }}</td>
+                    <td class="venc-monto venc-proximo">{{ proximoPago(item.valor_renovacion) }}</td>
+                    <td class="venc-action">
+                      <a [routerLink]="['/asis/clientes', item.id_cliente]" class="venc-btn" title="Ver ficha">
+                        <re-icon name="log-out" width="13" height="13"></re-icon>
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (pvTotalPages > 1) {
+            <div class="venc-pagination">
+              <button class="venc-pag-btn" (click)="loadPorVencer(pvPage - 1)" [disabled]="pvPage === 1">
+                <re-icon name="chevron-left-solid" width="12" height="12"></re-icon>
+              </button>
+              @for (p of pageNums(pvPage, pvTotalPages); track $index) {
+                @if (p === null) { <span class="venc-pag-ellipsis">…</span> }
+                @else { <button class="venc-pag-btn venc-pag-num" [class.venc-pag-active]="p === pvPage" (click)="loadPorVencer(p)">{{ p }}</button> }
+              }
+              <button class="venc-pag-btn" (click)="loadPorVencer(pvPage + 1)" [disabled]="pvPage === pvTotalPages">
+                <re-icon name="chevron-right-solid" width="12" height="12"></re-icon>
+              </button>
+            </div>
+          }
+        }
+        <div class="venc-panel-footer">
+          <button class="venc-export-btn" (click)="exportarExcel('por-vencer')"
+            [disabled]="exportando.pv || pvTotal === 0" title="Exportar a Excel">
+            <re-icon name="download" width="13" height="13"></re-icon>
+            {{ exportando.pv ? 'Descargando…' : 'Exportar Excel' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Vencidas -->
+      <div class="venc-panel venc-panel-danger">
+        <div class="venc-panel-header">
+          <a routerLink="/asis/contratos-vencidos" class="venc-panel-header-link">
+            <div class="venc-panel-title">
+              <re-icon name="alert" width="14" height="14"></re-icon>
+              Vencidas
+              <span class="venc-count venc-count-danger">{{ vdTotal }}</span>
+            </div>
+            <div class="venc-header-right">
+              <span class="venc-subtitle">Requieren renovación</span>
+              <re-icon name="arrow-right" class="venc-goto" width="13" height="13"></re-icon>
+            </div>
+          </a>
+        </div>
+
+        @if (vdLoading) {
+          <div class="venc-loading"><div class="venc-spinner"></div>Cargando...</div>
+        } @else if (vdData.length === 0) {
+          <div class="venc-empty">
+            <re-icon name="check-circle" width="32" height="32"></re-icon>
+            <span>Sin contratos vencidos</span>
+          </div>
+        } @else {
+          <div class="venc-table-wrap">
+            <table class="venc-table">
+              <thead>
+                <tr>
+                  <th>Ficha</th><th>Tipo</th><th>Cliente</th><th>Venció</th><th>Atraso</th><th>Último pago</th><th>Próximo pago</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of vdData; track item.id_sepultura) {
+                  <tr>
+                    <td class="venc-ficha">#{{ item.numero_ficha }}</td>
+                    <td class="venc-tipo">{{ item.tipo }}</td>
+                    <td class="venc-cliente">{{ item.nombre_cliente }}</td>
+                    <td class="venc-fecha">{{ formatFecha(item.fecha_vencimiento) }}</td>
+                    <td><span class="dias-badge dias-danger">{{ formatDias(item.dias_restantes) }}</span></td>
+                    <td class="venc-monto">{{ formatCLP(item.valor_renovacion) }}</td>
+                    <td class="venc-monto venc-proximo">{{ proximoPago(item.valor_renovacion) }}</td>
+                    <td class="venc-action">
+                      <a [routerLink]="['/asis/clientes', item.id_cliente]" class="venc-btn venc-btn-danger" title="Ver ficha">
+                        <re-icon name="log-out" width="13" height="13"></re-icon>
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (vdTotalPages > 1) {
+            <div class="venc-pagination">
+              <button class="venc-pag-btn" (click)="loadVencidas(vdPage - 1)" [disabled]="vdPage === 1">
+                <re-icon name="chevron-left-solid" width="12" height="12"></re-icon>
+              </button>
+              @for (p of pageNums(vdPage, vdTotalPages); track $index) {
+                @if (p === null) { <span class="venc-pag-ellipsis">…</span> }
+                @else { <button class="venc-pag-btn venc-pag-num" [class.venc-pag-active]="p === vdPage" (click)="loadVencidas(p)">{{ p }}</button> }
+              }
+              <button class="venc-pag-btn" (click)="loadVencidas(vdPage + 1)" [disabled]="vdPage === vdTotalPages">
+                <re-icon name="chevron-right-solid" width="12" height="12"></re-icon>
+              </button>
+            </div>
+          }
+        }
+        <div class="venc-panel-footer">
+          <button class="venc-export-btn venc-export-btn-danger" (click)="exportarExcel('vencidas')"
+            [disabled]="exportando.vd || vdTotal === 0" title="Exportar a Excel">
+            <re-icon name="download" width="13" height="13"></re-icon>
+            {{ exportando.vd ? 'Descargando…' : 'Exportar Excel' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── Modal Buscar por Ficha ───────────────────────── -->
+  @if (modalBuscarFichaVisible) {
+    <div class="modal-overlay" (click)="cerrarBuscarFicha()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Buscar por N° de ficha</h3>
+          <button class="modal-close" (click)="cerrarBuscarFicha()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-field">
+            <label>Número de ficha</label>
+            <input type="text" [(ngModel)]="buscarFicha"
+              placeholder="Ej: 1234"
+              (keydown.enter)="buscarSepulturaPorFicha()" autofocus />
+          </div>
+          @if (buscarFichaError) {
+            <div class="modal-error">{{ buscarFichaError }}</div>
+          }
+          @if (buscarFichaResultados.length > 0) {
+            <div class="nombre-resultados">
+              @for (r of buscarFichaResultados; track r.id) {
+                <button class="nombre-resultado-item" (click)="irAFicha(r.id_cliente)">
+                  <span class="nombre-resultado-nombre">Ficha #{{ r.numero_ficha }} — {{ r.tipo }}</span>
+                  <span class="nombre-resultado-rut">{{ r.estado }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarBuscarFicha()">Cancelar</button>
+          <button class="btn-save" (click)="buscarSepulturaPorFicha()"
+            [disabled]="!buscarFicha.trim() || buscandoFicha">
+            {{ buscandoFicha ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Buscar por Nombre ──────────────────────── -->
+  @if (modalBuscarNombreVisible) {
+    <div class="modal-overlay" (click)="cerrarBuscarNombre()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Buscar por nombre</h3>
+          <button class="modal-close" (click)="cerrarBuscarNombre()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-field">
+            <label>Nombre o apellidos</label>
+            <input type="text" [(ngModel)]="buscarNombre"
+              placeholder="Ej: Juan Pérez"
+              (keydown.enter)="buscarClientePorNombre()" autofocus />
+          </div>
+          @if (buscarNombreError) {
+            <div class="modal-error">{{ buscarNombreError }}</div>
+          }
+          @if (buscarNombreResultados.length > 0) {
+            <div class="nombre-resultados">
+              @for (r of buscarNombreResultados; track r.id) {
+                <button class="nombre-resultado-item" (click)="irACliente(r.id)">
+                  <span class="nombre-resultado-nombre">{{ r.nombre }} {{ r.apellido1 }} {{ r.apellido2 }}</span>
+                  <span class="nombre-resultado-rut">{{ r.rut }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarBuscarNombre()">Cancelar</button>
+          <button class="btn-save" (click)="buscarClientePorNombre()"
+            [disabled]="!buscarNombre.trim() || buscandoNombre">
+            {{ buscandoNombre ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Buscar Cliente ─────────────────────────── -->
+  @if (modalBuscarVisible) {
+    <div class="modal-overlay" (click)="cerrarBuscarCliente()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Buscar cliente</h3>
+          <button class="modal-close" (click)="cerrarBuscarCliente()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (buscarError) {
+            <div class="modal-error">{{ buscarError }}</div>
+          }
+          <div class="form-field">
+            <label>RUT</label>
+            <input type="text" [ngModel]="buscarRut" (ngModelChange)="onBuscarRutInput($event)"
+              placeholder="12.345.678-9"
+              (blur)="onBuscarRutBlur()"
+              [class.input-error]="buscarRutError"
+              (keydown.enter)="buscarCliente()" />
+            @if (buscarRutError) { <span class="field-error">{{ buscarRutError }}</span> }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarBuscarCliente()">Cancelar</button>
+          <button class="btn-save" (click)="buscarCliente()"
+            [disabled]="!buscarRut || !!buscarRutError || buscando">
+            {{ buscando ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Crear Cliente ───────────────────────────── -->
+  @if (modalVisible) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Nuevo cliente</h3>
+          <button class="modal-close" (click)="cerrarModal()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (errorMsg) {
+            <div class="modal-error">{{ errorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>RUT *</label>
+              <input type="text" [ngModel]="form.rut" (ngModelChange)="onRutInput($event)"
+                placeholder="12.345.678-9"
+                (blur)="onRutBlur()"
+                [class.input-error]="rutError"
+                autofocus />
+              @if (rutError) { <span class="field-error">{{ rutError }}</span> }
+            </div>
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [(ngModel)]="form.nombre" placeholder="Nombre" />
+            </div>
+            <div class="form-field">
+              <label>Apellido 1 *</label>
+              <input type="text" [(ngModel)]="form.apellido1" placeholder="Primer apellido" />
+            </div>
+            <div class="form-field">
+              <label>Apellido 2</label>
+              <input type="text" [(ngModel)]="form.apellido2" placeholder="Segundo apellido" />
+            </div>
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input type="text" [(ngModel)]="form.telefono" placeholder="Teléfono fijo" />
+            </div>
+            <div class="form-field">
+              <label>Celular</label>
+              <input type="text" [(ngModel)]="form.celular" placeholder="Celular" />
+            </div>
+            <div class="form-field">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="form.email" placeholder="email@ejemplo.cl" />
+            </div>
+            <div class="form-field">
+              <label>Dirección</label>
+              <input type="text" [(ngModel)]="form.direccion" placeholder="Dirección" />
+            </div>
+            <div class="form-field">
+              <label>Comuna</label>
+              <input type="text" [(ngModel)]="form.comuna" placeholder="Comuna" />
+            </div>
+            <div class="form-field">
+              <label>Ciudad</label>
+              <input type="text" [(ngModel)]="form.ciudad" placeholder="Ciudad" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+          <button class="btn-save" (click)="guardar()"
+            [disabled]="!form.rut || !form.nombre || !form.apellido1 || rutInvalido || saving">
+            {{ saving ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

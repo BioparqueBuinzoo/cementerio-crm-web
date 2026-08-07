@@ -1,0 +1,116 @@
+<div class="config-container">
+
+  <div class="config-header">
+    <re-icon name="settings" class="header-brand-icon" width="32" height="32"></re-icon>
+    <div class="title-text">
+      <h1>Configuración</h1>
+      <span>Notificaciones por correo y usuarios con acceso a la plataforma</span>
+    </div>
+  </div>
+
+  <!-- ── Notificaciones por correo ─────────────────────── -->
+  <section class="config-card">
+    <div class="config-card-header">
+      <re-icon name="mail" width="20" height="20"></re-icon>
+      <h2>Notificaciones por correo</h2>
+    </div>
+
+    @if (loadingCorreo()) {
+      <div class="config-card-body">
+        <p class="config-muted">Cargando estado…</p>
+      </div>
+    } @else if (correoError()) {
+      <div class="config-card-body">
+        <p class="config-error">{{ correoError() }}</p>
+      </div>
+    } @else {
+      <div class="config-card-body">
+        <div class="status-row">
+          <span class="status-label">Estado del servidor de correo (SMTP)</span>
+          @if (smtpConfigured()) {
+            <span class="status-badge status-ok">
+              <re-icon name="check-circle" width="14" height="14"></re-icon>
+              Configurado
+            </span>
+          } @else {
+            <span class="status-badge status-off">
+              <re-icon name="x-circle" width="14" height="14"></re-icon>
+              No configurado
+            </span>
+          }
+        </div>
+        <div class="status-row">
+          <span class="status-label">Tiempo de espera entre envíos a un mismo cliente</span>
+          <span class="status-value">{{ cooldownHours() }} horas</span>
+        </div>
+        @if (!smtpConfigured()) {
+          <p class="config-hint">
+            El envío de correos de renovación (por vencer / vencidas) está deshabilitado hasta que se configure el servidor SMTP en el backend.
+          </p>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- ── Usuarios registrados ──────────────────────────── -->
+  <section class="config-card">
+    <div class="config-card-header">
+      <re-icon name="users-alt" width="20" height="20"></re-icon>
+      <h2>Usuarios registrados en la plataforma</h2>
+    </div>
+
+    @if (!auth.isAdmin()) {
+      <div class="config-card-body">
+        <p class="config-muted">Solo un administrador puede ver el listado de usuarios.</p>
+      </div>
+    } @else if (loadingUsuarios()) {
+      <div class="config-card-body">
+        <p class="config-muted">Cargando usuarios…</p>
+      </div>
+    } @else if (usuariosError()) {
+      <div class="config-card-body">
+        <p class="config-error">{{ usuariosError() }}</p>
+      </div>
+    } @else {
+      <div class="config-table-wrap">
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Registrado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios(); track u.id) {
+              <tr>
+                <td>{{ nombreUsuario(u) }}</td>
+                <td>{{ u.email }}</td>
+                <td>
+                  @for (rol of u.roles; track rol) {
+                    <span class="role-badge">{{ rol }}</span>
+                  } @empty {
+                    <span class="config-muted">Sin rol</span>
+                  }
+                </td>
+                <td>
+                  @if (u.is_active) {
+                    <span class="status-badge status-ok">Activo</span>
+                  } @else {
+                    <span class="status-badge status-off">Inactivo</span>
+                  }
+                </td>
+                <td>{{ formatFecha(u.created_at) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="config-muted">No hay usuarios registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+</div>

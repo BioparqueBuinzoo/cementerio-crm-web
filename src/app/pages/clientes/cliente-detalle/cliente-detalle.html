@@ -1,0 +1,1147 @@
+<div class="detalle-container">
+
+  <!-- ── Header ──────────────────────────────────────── -->
+  <div class="detalle-header">
+    <a routerLink="/asis/clientes" class="btn-back" title="Volver a clientes">
+      <re-icon name="chevron-left" width="18" height="18"></re-icon>
+    </a>
+    <div class="header-title">
+
+      <div class="title-icon">
+        <re-icon name="user" width="20" height="20"></re-icon>
+      </div>
+      <div class="title-text">
+        @if (cliente()) {
+          <h1>{{ nombreCompleto }}</h1>
+          <span>{{ cliente()!.rut || 'Sin RUT' }} · Ficha #{{ cliente()!.id }}</span>
+        } @else {
+          <h1>Ficha de Cliente</h1>
+          <span>Cargando...</span>
+        }
+      </div>
+    </div>
+    @if (cliente()) {
+      <button class="btn-download" (click)="descargarPdf()" [disabled]="generandoPdf()" title="Descargar ficha PDF">
+        <re-icon name="download" width="15" height="15"></re-icon>
+        {{ generandoPdf() ? 'Generando…' : 'PDF' }}
+      </button>
+    }
+  </div>
+
+  <!-- ── Estado carga inicial ────────────────────────── -->
+  @if (loading() && !cliente()) {
+    <div class="state-loading">
+      <div class="spinner"></div>
+      <span>Cargando ficha...</span>
+    </div>
+  }
+
+  <!-- ── Error ───────────────────────────────────────── -->
+  @if (error()) {
+    <div class="state-error">
+      <re-icon name="alert" width="20" height="20"></re-icon>
+      <span>{{ error() }}</span>
+      <a routerLink="/asis/clientes" class="btn-back-link">Volver a clientes</a>
+    </div>
+  }
+
+  <!-- ── Contenido ───────────────────────────────────── -->
+  @if (cliente() && !error()) {
+
+    <!-- Datos personales del cliente -->
+    <div class="card">
+      <div class="card-header">
+        <re-icon name="layout" width="14" height="14"></re-icon>
+        Datos del cliente
+        <button class="btn-add-sep" (click)="abrirModalEditCliente()" title="Editar datos del cliente">
+          <re-icon name="edit" width="14" height="14"></re-icon>
+          Editar
+        </button>
+      </div>
+      <div class="info-grid">
+        <div class="info-field">
+          <span class="info-label">RUT</span>
+          <span class="info-value">{{ cliente()!.rut || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Nombre</span>
+          <span class="info-value">{{ cliente()!.nombre || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Primer apellido</span>
+          <span class="info-value">{{ cliente()!.apellido1 || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Segundo apellido</span>
+          <span class="info-value">{{ cliente()!.apellido2 || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Dirección</span>
+          <span class="info-value">{{ cliente()!.direccion || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Comuna</span>
+          <span class="info-value">{{ cliente()!.comuna || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Ciudad</span>
+          <span class="info-value">{{ cliente()!.ciudad || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Teléfono</span>
+          <span class="info-value">{{ cliente()!.telefono || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Celular</span>
+          <span class="info-value">{{ cliente()!.celular || '—' }}</span>
+        </div>
+        <div class="info-field">
+          <span class="info-label">Email</span>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <span class="info-value">{{ cliente()!.email || '—' }}</span>
+            <button class="btn-small" (click)="loadLastSent()" title="Actualizar último envío">🔄</button>
+            <button class="btn-primary" (click)="notifyCliente()" [disabled]="!canNotify || notifying" title="Notificar cliente">
+              {{ notifying ? 'Encolando…' : 'Notificar' }}
+            </button>
+          </div>
+          @if (lastSent()) { <div class="info-sub">Último envío: {{ lastSent() }}</div> }
+        </div>
+        <div class="info-field">
+          <span class="info-label">Fecha de creación</span>
+          <span class="info-value">{{ (cliente()!.fecha_creacion | date:'dd/MM/yyyy') || '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contactos del cliente -->
+    <div class="card">
+      <div class="card-header card-header-clickable" (click)="contactosExpanded = !contactosExpanded">
+        <re-icon name="users-alt" width="14" height="14"></re-icon>
+        Contactos
+        <span class="badge">{{ contactos().length }}</span>
+        <re-icon name="chevron-down" class="card-chevron" [class.card-chevron-up]="contactosExpanded" width="15" height="15"></re-icon>
+        @if (contactosExpanded) {
+          <button class="btn-add-sep" (click)="$event.stopPropagation(); abrirModalContacto()" title="Agregar contacto">
+            <re-icon name="plus" width="14" height="14"></re-icon>
+            Nuevo contacto
+          </button>
+        }
+      </div>
+
+      @if (contactosExpanded) {
+        @if (contactos().length === 0) {
+          <p class="empty-msg" style="padding: 14px 18px;">Sin contactos registrados.</p>
+        } @else {
+          <div class="contactos-grid">
+            @for (c of contactos(); track c.id) {
+              <div class="contacto-card">
+                <div class="contacto-info">
+                  <span class="contacto-nombre">{{ nombreContacto(c) }}</span>
+                  <span class="contacto-rut">{{ c.rut || 'Sin RUT' }}</span>
+                  @if (c.telefono || c.celular) {
+                    <span class="contacto-tel">{{ c.telefono || c.celular }}</span>
+                  }
+                  @if (c.email) {
+                    <span class="contacto-email">{{ c.email }}</span>
+                  }
+                </div>
+                <div class="contacto-actions">
+                  <a [routerLink]="['/asis/clientes', c.id]" class="btn-icon-link" title="Ver ficha">
+                    <re-icon name="external-link" width="14" height="14"></re-icon>
+                  </a>
+                  <button class="btn-icon-remove" (click)="eliminarContacto(c.id)" title="Desvincular contacto">
+                    <re-icon name="x" width="13" height="13"></re-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Sepulturas + contratos + mascotas -->
+    <div class="card">
+      <div class="card-header card-header-clickable" (click)="sepulturasExpanded = !sepulturasExpanded">
+        <re-icon name="map-pin" width="14" height="14"></re-icon>
+        Sepulturas
+        <span class="badge">{{ sepulturasVisibles().length }}</span>
+        @if (loading()) { <div class="spinner spinner-sm"></div> }
+        <re-icon name="chevron-down" class="card-chevron" [class.card-chevron-up]="sepulturasExpanded" width="15" height="15"></re-icon>
+        @if (sepulturasExpanded) {
+          <button class="btn-add-sep" (click)="$event.stopPropagation(); abrirModalSep()" title="Nueva sepultura">
+            <re-icon name="plus" width="14" height="14"></re-icon>
+            Nueva sepultura
+          </button>
+        }
+      </div>
+
+      @if (sepulturasExpanded) {
+
+      @if (!loading() && sepulturasVisibles().length === 0) {
+        <p class="empty-msg">Este cliente no tiene sepulturas activas.</p>
+      }
+
+      @for (sep of sepulturasVisibles(); track sep.id) {
+        <div class="sepultura-block">
+
+          <!-- Cabecera de sepultura -->
+          <div class="sepultura-header sepultura-header-clickable" (click)="toggleFicha(sep.id)">
+            <div class="sep-title">
+              <span class="sep-ficha">Ficha #{{ sep.numero_ficha }}</span>
+              <span class="sep-tipo">{{ sep.tipo }}</span>
+            </div>
+            @if (estadoEfectivo(sep); as ef) {
+              <span class="estado-efectivo-badge estado-ef-{{ ef.css }}">
+                @switch (ef.css) {
+                  @case ('en-uso') {
+                    <re-icon name="check-solid" width="11" height="11"></re-icon>
+                  }
+                  @case ('pendiente') {
+                    <re-icon name="clock-solid" width="11" height="11"></re-icon>
+                  }
+                  @case ('terminado') {
+                    <re-icon name="square-circle-solid" width="11" height="11"></re-icon>
+                  }
+                }
+                {{ ef.label }}
+              </span>
+            }
+            <button class="btn-marcar-terminado" (click)="$event.stopPropagation(); abrirModalEditSep(sep)" title="Editar sepultura">
+              Editar
+            </button>
+            @if (estadoEfectivo(sep).css !== 'terminado') {
+              <button class="btn-marcar-terminado" (click)="$event.stopPropagation(); abrirModalTerminado(sep.id)" title="Marcar como terminada">
+                Marcar terminada
+              </button>
+            }
+            <re-icon name="chevron-down" class="sep-chevron" [class.sep-chevron-up]="isFichaExpanded(sep.id)" width="14" height="14"></re-icon>
+          </div>
+
+          @if (isFichaExpanded(sep.id)) {
+
+          <!-- Campos de ubicación -->
+          <div class="sep-info-row">
+            <div class="sep-field">
+              <span class="info-label">Ubicación anterior</span>
+              <span class="info-value">{{ sep.ubicacion_vieja || '—' }}</span>
+            </div>
+            <div class="sep-field">
+              <span class="info-label">Ubicación actual</span>
+              <span class="info-value">{{ sep.ubicacion_nueva || '—' }}</span>
+            </div>
+            <div class="sep-field">
+              <span class="info-label">Observaciones</span>
+              <span class="info-value">{{ sep.observaciones || '—' }}</span>
+            </div>
+          </div>
+
+          <!-- ── Contratos (solo si no está terminada) ─── -->
+          @if (estadoEfectivo(sep).css !== 'terminado') {
+          <div class="subsection">
+            <div class="subsection-title">
+              <re-icon name="file-text" width="13" height="13"></re-icon>
+              Contrato actual
+              <span class="subsection-count">{{ sep.contratos.length }}</span>
+              @if (sep.contratos.length === 0) {
+                <button class="btn-add-sep" (click)="abrirModalContrato(sep.id)" title="Crear contrato inicial">
+                  <re-icon name="plus" width="14" height="14"></re-icon>
+                  Generar nuevo contrato
+                </button>
+              }
+            </div>
+
+            @if (sep.contratos.length === 0) {
+              <p class="no-data-msg">Esta sepultura aún no tiene contrato.</p>
+            } @else {
+
+              <!-- Último contrato (el que vale) -->
+              @if (ultimoContrato(sep.contratos); as uc) {
+                <div class="contrato-actual" [class]="'contrato-actual-' + estadoContrato(uc.fecha_vencimiento)">
+                  <div class="contrato-resumen-header">
+                    <div class="contrato-actual-estado">
+                      <span class="resumen-eyebrow">Estado del contrato</span>
+                      <span class="contrato-badge" [class]="'contrato-' + estadoContrato(uc.fecha_vencimiento)">
+                        @if (estadoContrato(uc.fecha_vencimiento) === 'vigente') {
+                          Vigente
+                        } @else if (estadoContrato(uc.fecha_vencimiento) === 'por-vencer') {
+                          Por vencer
+                        } @else {
+                          Vencido
+                        }
+                      </span>
+                      <strong class="vigencia-detalle">{{ detalleVigencia(uc.fecha_vencimiento) }}</strong>
+                      @if (tieneMoraProlongada(uc.fecha_vencimiento)) {
+                        <span class="mora-prolongada-badge">⚑ Mora mayor a un año</span>
+                      }
+                    </div>
+                    @if (puedeRenovarContrato(sep.contratos)) {
+                      <button class="btn-renovar-contrato" (click)="abrirModalContrato(sep.id)" title="Renovar por una anualidad">
+                        <re-icon name="refresh-cw" width="14" height="14"></re-icon>
+                        Renovar contrato
+                      </button>
+                    } @else {
+                      <span class="contrato-al-dia">✓ No requiere renovación</span>
+                    }
+                  </div>
+                  <div class="contrato-actual-campos">
+                    <div class="ca-field">
+                      <span class="info-label">Fecha de pago</span>
+                      <span class="info-value">{{ (uc.fecha_pago | date:'dd/MM/yyyy') || '—' }}</span>
+                      <span class="pago-origen-inline">✓ Pagado · {{ origenPago(uc.forma_pago) }}</span>
+                    </div>
+                    <div class="ca-field">
+                      <span class="info-label">Fecha de vencimiento</span>
+                      <span class="info-value" [class.texto-vencido]="esVencido(uc.fecha_vencimiento)">
+                        {{ (uc.fecha_vencimiento | date:'dd/MM/yyyy') || '—' }}
+                      </span>
+                    </div>
+                    <div class="ca-field">
+                      <span class="info-label">Monto pagado</span>
+                      <span class="info-value info-value-money">{{ formatCLP(uc.valor_renovacion) }}</span>
+                    </div>
+                    <div class="ca-field">
+                      <span class="info-label">Forma de pago</span>
+                      <span class="info-value">{{ uc.forma_pago || '—' }}</span>
+                    </div>
+                    <div class="ca-field">
+                      <span class="info-label">N° Comprobante</span>
+                      <span class="info-value">{{ uc.numero_comprobante || '—' }}</span>
+                    </div>
+                  </div>
+                  <div class="contrato-regla-vigencia">
+                    <span>1 anualidad</span>
+                    <span>Vigencia desde el pago</span>
+                    <span>Recargo de renovación: 6%</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Historial de contratos anteriores -->
+              @if (historialContratos(sep.contratos).length > 0) {
+                <details class="historial-details">
+                  <summary class="historial-summary">
+                    <re-icon name="history" width="13" height="13"></re-icon>
+                    Historial ({{ historialContratos(sep.contratos).length }} anterior{{ historialContratos(sep.contratos).length > 1 ? 'es' : '' }})
+                  </summary>
+                  <div class="historial-timeline">
+                    @for (c of historialContratos(sep.contratos); track c.id) {
+                      <div class="historial-evento">
+                        <span class="historial-dot"></span>
+                        <div class="historial-evento-main">
+                          <div class="historial-evento-title">
+                            <strong>Pago {{ formatCLP(c.valor_renovacion) }}</strong>
+                            <span class="origen-chip">{{ origenPago(c.forma_pago) }}</span>
+                          </div>
+                          <span>
+                            Período {{ (c.fecha_pago | date:'dd/MM/yyyy') || '—' }} →
+                            {{ (c.fecha_vencimiento | date:'dd/MM/yyyy') || '—' }}
+                          </span>
+                          <small>{{ c.forma_pago || 'Sin forma de pago' }} · Comprobante {{ c.numero_comprobante || 'no informado' }}</small>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </details>
+              }
+
+            }
+          </div>
+          } <!-- /if no terminado -->
+
+          <!-- ── Mascotas ────────────────────────────────── -->
+          <div class="subsection">
+            <div class="subsection-title">
+              <re-icon name="cat" width="13" height="13"></re-icon>
+              Mascotas
+              <span class="subsection-count">{{ sep.mascotas.length }}</span>
+              <button class="btn-add-sep" (click)="abrirModalMascota(sep.id)" title="Nueva mascota">
+                <re-icon name="plus" width="14" height="14"></re-icon>
+                Nueva mascota
+              </button>
+            </div>
+
+            @if (sep.mascotas.length === 0) {
+              <p class="no-data-msg">Sin mascotas registradas en esta sepultura.</p>
+            } @else {
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Especie</th>
+                      <th>Raza</th>
+                      <th>Sexo</th>
+                      <th>F. Muerte</th>
+                      <th>F. Sepultación</th>
+                      <th>Estado</th>
+                      <th>Encargado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of sep.mascotas; track m.id) {
+                      <tr>
+                        <td>{{ m.nombre }}</td>
+                        <td>{{ m.especie }}</td>
+                        <td>{{ m.raza || '—' }}</td>
+                        <td>{{ m.sexo || '—' }}</td>
+                        <td>{{ (m.fecha_muerte | date:'dd/MM/yyyy') || '—' }}</td>
+                        <td>{{ (m.fecha_sepultacion | date:'dd/MM/yyyy') || '—' }}</td>
+                        <td>
+                          <span class="estado-badge" [class]="'estado-' + m.estado.toLowerCase()">{{ m.estado }}</span>
+                        </td>
+                        <td>{{ m.encargado || '—' }}</td>
+                        <td>
+                          <button class="btn-icon-edit" (click)="abrirModalEditMascota(m, sep.id)" title="Editar mascota">
+                            <re-icon name="edit" width="13" height="13"></re-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+
+          } <!-- /isFichaExpanded -->
+        </div><!-- /sepultura-block -->
+      }
+
+      } <!-- /sepulturasExpanded -->
+    </div>
+
+    <!-- Observaciones del cliente -->
+    <div class="card">
+      <div class="card-header">
+        <re-icon name="message-square" width="14" height="14"></re-icon>
+        Observaciones
+        <span class="badge">{{ observaciones().length }}</span>
+      </div>
+
+      <!-- Formulario nueva observación -->
+      <div class="obs-form">
+        @if (observacionErrorMsg) {
+          <div class="modal-error" style="margin: 0 0 8px;">{{ observacionErrorMsg }}</div>
+        }
+        <textarea class="obs-textarea" [(ngModel)]="nuevaObservacion" rows="2"
+          placeholder="Escribe una nueva observación..."></textarea>
+        <button class="btn-obs-save" (click)="guardarObservacion()"
+          [disabled]="savingObservacion || !nuevaObservacion.trim()">
+          {{ savingObservacion ? 'Guardando...' : 'Agregar observación' }}
+        </button>
+      </div>
+
+      <!-- Historial -->
+      @if (observaciones().length === 0) {
+        <p class="empty-msg" style="padding: 10px 18px 14px;">Sin observaciones registradas.</p>
+      } @else {
+        <div class="obs-list">
+          @for (obs of observaciones(); track obs.id) {
+            <div class="obs-item">
+              <div class="obs-meta">
+                <span class="obs-usuario">{{ obs.usuario }}</span>
+                <span class="obs-fecha">{{ obs.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <p class="obs-texto">{{ obs.texto }}</p>
+              <button class="btn-icon-remove obs-delete"
+                (click)="eliminarObservacion(obs.id)"
+                [disabled]="eliminandoObservacionId === obs.id"
+                title="Eliminar observación">
+                <re-icon name="trash" width="13" height="13"></re-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  }
+
+  <!-- ── Modal Contrato ───────────────────────────────── -->
+  @if (modalContratoVisible) {
+    <div class="modal-overlay" (click)="cerrarModalContrato()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>{{ tituloModalContrato }}</h3>
+          <button class="modal-close" (click)="cerrarModalContrato()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (contratoErrorMsg) {
+            <div class="modal-error">{{ contratoErrorMsg }}</div>
+          }
+          @if (loadingContrato) {
+            <div class="modal-loading">
+              <div class="modal-spinner"></div>
+              Cargando...
+            </div>
+          } @else {
+            <div class="renovacion-policy">
+              <div>
+                <span class="renovacion-policy-label">Período</span>
+                <strong>1 anualidad desde la fecha de pago</strong>
+              </div>
+              <div>
+                <span class="renovacion-policy-label">Recargo fijo</span>
+                <strong>{{ esRenovacionContrato ? '6%' : '6% en la próxima renovación' }}</strong>
+              </div>
+              @if (esRenovacionContrato) {
+                <div>
+                  <span class="renovacion-policy-label">Cálculo</span>
+                  <strong>{{ formatCLP(montoBaseRenovacion) }} + {{ formatCLP(recargoRenovacion) }}</strong>
+                </div>
+              }
+            </div>
+            @if (esRenovacionContrato) {
+              <div class="renewal-period">
+                <div class="renewal-date-card">
+                  <span>Pago efectivo</span>
+                  <strong>{{ contratoForm['fecha_pago'] | date:'dd/MM/yyyy' }}</strong>
+                </div>
+                <span class="renewal-period-arrow" aria-hidden="true">→</span>
+                <div class="renewal-date-card">
+                  <span>Nueva cobertura hasta</span>
+                  <strong>{{ contratoForm['fecha_vencimiento'] | date:'dd/MM/yyyy' }}</strong>
+                </div>
+              </div>
+              <div class="renewal-fields">
+                <div class="form-field renewal-total-field">
+                  <label>Total a pagar *</label>
+                  <div class="input-display input-display-total">{{ montoContratoStr }}</div>
+                </div>
+                <div class="form-field">
+                  <label>Medio de pago *</label>
+                  <select [(ngModel)]="contratoForm['forma_pago']">
+                    @for (f of formasPago; track f.id) {
+                      <option [value]="f.nombre">{{ f.nombre }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>N° de boleta *</label>
+                  <input type="text" [(ngModel)]="contratoForm['numero_comprobante']" placeholder="Ingresa el número de boleta" />
+                </div>
+              </div>
+            } @else {
+              <div class="form-grid-2col">
+                <div class="form-field">
+                  <label>Fecha de pago *</label>
+                  <input type="date" [(ngModel)]="contratoForm['fecha_pago']" (ngModelChange)="onFechaPagoChange($event)" />
+                </div>
+                <div class="form-field">
+                  <label>Fecha de vencimiento</label>
+                  <div class="input-display">{{ contratoForm['fecha_vencimiento'] | date:'dd/MM/yyyy' }}</div>
+                </div>
+                <div class="form-field">
+                  <label>Valor del contrato *</label>
+                  <input type="text" inputmode="numeric"
+                    [value]="montoContratoStr"
+                    (input)="onMontoContratoInput($any($event.target).value)"
+                    (blur)="onMontoContratoBlur()"
+                    placeholder="$ 0" />
+                </div>
+                <div class="form-field">
+                  <label>Medio de pago *</label>
+                  <select [(ngModel)]="contratoForm['forma_pago']">
+                    @for (f of formasPago; track f.id) {
+                      <option [value]="f.nombre">{{ f.nombre }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>N° de boleta</label>
+                  <input type="text" [(ngModel)]="contratoForm['numero_comprobante']" placeholder="Ingresa el número de boleta" />
+                </div>
+                <div class="form-field form-field-full">
+                  <label>Pagado por</label>
+                  <div class="input-display">{{ nombreCompleto }}</div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalContrato()">Cancelar</button>
+          <button class="btn-save" (click)="solicitarGuardarContrato()"
+            [disabled]="loadingContrato || !contratoForm['fecha_pago'] || !contratoForm['fecha_vencimiento'] || !contratoForm['valor_renovacion'] || !contratoForm['forma_pago'] || (esRenovacionContrato && !contratoForm['numero_comprobante'].trim()) || savingContrato">
+            {{ savingContrato ? 'Generando...' : (esRenovacionContrato ? 'Confirmar renovación' : 'Generar contrato') }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  @if (confirmacionRenovacionVisible) {
+    <div class="modal-overlay confirm-renewal-overlay" (click)="cancelarConfirmacionRenovacion()">
+      <div class="modal-content confirm-renewal-dialog" role="alertdialog" aria-modal="true"
+        aria-labelledby="confirm-renewal-title" (click)="$event.stopPropagation()">
+        <div class="confirm-renewal-icon" aria-hidden="true">?</div>
+        <div class="confirm-renewal-copy">
+          <span class="confirm-renewal-eyebrow">Confirmar operación</span>
+          <h3 id="confirm-renewal-title">¿Renovar este contrato?</h3>
+          <p>Se generará un contrato nuevo con los siguientes datos:</p>
+        </div>
+        <dl class="confirm-renewal-summary">
+          <div><dt>Monto total</dt><dd>{{ montoContratoStr }}</dd></div>
+          <div><dt>N° de boleta</dt><dd>{{ contratoForm['numero_comprobante'] }}</dd></div>
+          <div><dt>Medio de pago</dt><dd>{{ contratoForm['forma_pago'] }}</dd></div>
+          <div><dt>Vigente hasta</dt><dd>{{ contratoForm['fecha_vencimiento'] | date:'dd/MM/yyyy' }}</dd></div>
+        </dl>
+        <p class="confirm-renewal-warning">Esta acción registrará la renovación y no debe repetirse.</p>
+        <div class="confirm-renewal-actions">
+          <button class="btn-cancel" (click)="cancelarConfirmacionRenovacion()">Volver</button>
+          <button class="btn-save" (click)="confirmarRenovacion()" [disabled]="savingContrato">
+            {{ savingContrato ? 'Renovando...' : 'Sí, renovar contrato' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Nueva Mascota ──────────────────────────── -->
+  @if (modalMascotaVisible) {
+    <div class="modal-overlay" (click)="cerrarModalMascota()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Nueva mascota</h3>
+          <button class="modal-close" (click)="cerrarModalMascota()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (mascotaErrorMsg) {
+            <div class="modal-error">{{ mascotaErrorMsg }}</div>
+          }
+          @if (loadingMascota) {
+            <div class="modal-loading"><div class="modal-spinner"></div>Cargando...</div>
+          } @else {
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [(ngModel)]="mascotaForm.nombre" placeholder="Nombre de la mascota" />
+            </div>
+            <div class="form-field">
+              <label>Especie *</label>
+              <input type="text" [(ngModel)]="mascotaForm.especie" placeholder="Ej: Perro, Gato..." />
+            </div>
+            <div class="form-field">
+              <label>Raza</label>
+              <input type="text" [(ngModel)]="mascotaForm.raza" placeholder="Raza" />
+            </div>
+            <div class="form-field">
+              <label>Sexo</label>
+              <select [(ngModel)]="mascotaForm.sexo">
+                <option value="Macho">Macho</option>
+                <option value="Hembra">Hembra</option>
+                <option value="Indeterminado">Indeterminado</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Fecha de nacimiento</label>
+              <input type="date" [(ngModel)]="mascotaForm.fecha_nacimiento" />
+            </div>
+            <div class="form-field">
+              <label>Fecha de muerte *</label>
+              <input type="date" [(ngModel)]="mascotaForm.fecha_muerte" />
+            </div>
+            <div class="form-field">
+              <label>Causa de muerte</label>
+              <input type="text" [(ngModel)]="mascotaForm.causa_muerte" placeholder="Causa de muerte" />
+            </div>
+            <div class="form-field">
+              <label>Fecha de sepultación *</label>
+              <input type="date" [(ngModel)]="mascotaForm.fecha_sepultacion" />
+            </div>
+            <div class="form-field">
+              <label>Estado</label>
+              <select [(ngModel)]="mascotaForm.estado">
+                <option value="EN SEPULTURA">En sepultura</option>
+                <option value="EN MAUSOLEO">En mausoleo</option>
+                <option value="CAMBIADA DE SEPULTURA">Cambiada de sepultura</option>
+                <option value="DEVUELTA A CLIENTE">Devuelta a cliente</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Quién sepulta</label>
+              <select [(ngModel)]="mascotaForm.encargado">
+                <option value="">— Seleccionar —</option>
+                @for (e of encargados; track e.id) {
+                  <option [value]="e.nombre">{{ e.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field form-field-full">
+              <label>Observaciones</label>
+              <input type="text" [(ngModel)]="mascotaForm.observaciones" placeholder="Observaciones" />
+            </div>
+          </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalMascota()">Cancelar</button>
+          <button class="btn-save" (click)="guardarMascota()"
+            [disabled]="loadingMascota || !mascotaForm.nombre || !mascotaForm.especie || !mascotaForm.fecha_muerte || !mascotaForm.fecha_sepultacion || savingMascota">
+            {{ savingMascota ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Nuevo Contacto ─────────────────────────── -->
+  @if (modalContactoVisible) {
+    <div class="modal-overlay" (click)="cerrarModalContacto()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Nuevo contacto</h3>
+          <button class="modal-close" (click)="cerrarModalContacto()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (contactoErrorMsg) {
+            <div class="modal-error">{{ contactoErrorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field form-field-full">
+              <label>RUT *</label>
+              <input type="text" [ngModel]="contactoForm.rut" (ngModelChange)="onContactoRutInput($event)"
+                (blur)="onContactoRutBlur()"
+                [class.input-invalid]="contactoRutError"
+                placeholder="Ej: 12.345.678-9" />
+              @if (contactoRutError) {
+                <span class="field-error">{{ contactoRutError }}</span>
+              }
+            </div>
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [(ngModel)]="contactoForm.nombre" placeholder="Nombre" />
+            </div>
+            <div class="form-field">
+              <label>Primer apellido *</label>
+              <input type="text" [(ngModel)]="contactoForm.apellido1" placeholder="Primer apellido" />
+            </div>
+            <div class="form-field">
+              <label>Segundo apellido</label>
+              <input type="text" [(ngModel)]="contactoForm.apellido2" placeholder="Segundo apellido" />
+            </div>
+            <div class="form-field">
+              <label>Dirección</label>
+              <input type="text" [(ngModel)]="contactoForm.direccion" placeholder="Dirección" />
+            </div>
+            <div class="form-field">
+              <label>Comuna</label>
+              <input type="text" [(ngModel)]="contactoForm.comuna" placeholder="Comuna" />
+            </div>
+            <div class="form-field">
+              <label>Ciudad</label>
+              <input type="text" [(ngModel)]="contactoForm.ciudad" placeholder="Ciudad" />
+            </div>
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input type="text" [(ngModel)]="contactoForm.telefono" placeholder="Teléfono" />
+            </div>
+            <div class="form-field">
+              <label>Celular</label>
+              <input type="text" [(ngModel)]="contactoForm.celular" placeholder="Celular" />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="contactoForm.email" placeholder="Email" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalContacto()">Cancelar</button>
+          <button class="btn-save" (click)="guardarContacto()"
+            [disabled]="!contactoForm.rut || !contactoForm.nombre || !contactoForm.apellido1 || !!contactoRutError || savingContacto">
+            {{ savingContacto ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Editar Cliente ─────────────────────────── -->
+  @if (modalEditClienteVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEditCliente()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Editar datos del cliente</h3>
+          <button class="modal-close" (click)="cerrarModalEditCliente()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (editClienteErrorMsg) {
+            <div class="modal-error">{{ editClienteErrorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [(ngModel)]="editClienteForm.nombre" placeholder="Nombre" />
+            </div>
+            <div class="form-field">
+              <label>Primer apellido *</label>
+              <input type="text" [(ngModel)]="editClienteForm.apellido1" placeholder="Primer apellido" />
+            </div>
+            <div class="form-field">
+              <label>Segundo apellido</label>
+              <input type="text" [(ngModel)]="editClienteForm.apellido2" placeholder="Segundo apellido" />
+            </div>
+            <div class="form-field">
+              <label>Dirección</label>
+              <input type="text" [(ngModel)]="editClienteForm.direccion" placeholder="Dirección" />
+            </div>
+            <div class="form-field">
+              <label>Comuna</label>
+              <input type="text" [(ngModel)]="editClienteForm.comuna" placeholder="Comuna" />
+            </div>
+            <div class="form-field">
+              <label>Ciudad</label>
+              <input type="text" [(ngModel)]="editClienteForm.ciudad" placeholder="Ciudad" />
+            </div>
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input type="text" [(ngModel)]="editClienteForm.telefono" placeholder="Teléfono" />
+            </div>
+            <div class="form-field">
+              <label>Celular</label>
+              <input type="text" [(ngModel)]="editClienteForm.celular" placeholder="Celular" />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Email</label>
+              <input type="email" [(ngModel)]="editClienteForm.email" placeholder="Email" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEditCliente()">Cancelar</button>
+          <button class="btn-save" (click)="guardarEditCliente()"
+            [disabled]="!editClienteForm.nombre || !editClienteForm.apellido1 || savingEditCliente">
+            {{ savingEditCliente ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Editar Mascota ──────────────────────────── -->
+  @if (modalEditMascotaVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEditMascota()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Editar mascota</h3>
+          <button class="modal-close" (click)="cerrarModalEditMascota()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (editMascotaErrorMsg) {
+            <div class="modal-error">{{ editMascotaErrorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [(ngModel)]="editMascotaForm.nombre" placeholder="Nombre de la mascota" />
+            </div>
+            <div class="form-field">
+              <label>Especie *</label>
+              <input type="text" [(ngModel)]="editMascotaForm.especie" placeholder="Ej: Perro, Gato..." />
+            </div>
+            <div class="form-field">
+              <label>Raza</label>
+              <input type="text" [(ngModel)]="editMascotaForm.raza" placeholder="Raza" />
+            </div>
+            <div class="form-field">
+              <label>Sexo</label>
+              <select [(ngModel)]="editMascotaForm.sexo">
+                <option value="Macho">Macho</option>
+                <option value="Hembra">Hembra</option>
+                <option value="Indeterminado">Indeterminado</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Fecha de nacimiento</label>
+              <input type="date" [(ngModel)]="editMascotaForm.fecha_nacimiento" />
+            </div>
+            <div class="form-field">
+              <label>Fecha de muerte</label>
+              <input type="date" [(ngModel)]="editMascotaForm.fecha_muerte" />
+            </div>
+            <div class="form-field">
+              <label>Causa de muerte</label>
+              <input type="text" [(ngModel)]="editMascotaForm.causa_muerte" placeholder="Causa de muerte" />
+            </div>
+            <div class="form-field">
+              <label>Fecha de sepultación</label>
+              <input type="date" [(ngModel)]="editMascotaForm.fecha_sepultacion" />
+            </div>
+            <div class="form-field">
+              <label>Estado</label>
+              <select [(ngModel)]="editMascotaForm.estado">
+                <option value="EN SEPULTURA">En sepultura</option>
+                <option value="EN MAUSOLEO">En mausoleo</option>
+                <option value="CAMBIADA DE SEPULTURA">Cambiada de sepultura</option>
+                <option value="DEVUELTA A CLIENTE">Devuelta a cliente</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Quién sepulta</label>
+              <select [(ngModel)]="editMascotaForm.encargado">
+                <option value="">— Seleccionar —</option>
+                @for (e of encargados; track e.id) {
+                  <option [value]="e.nombre">{{ e.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field form-field-full">
+              <label>Observaciones</label>
+              <input type="text" [(ngModel)]="editMascotaForm.observaciones" placeholder="Observaciones" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEditMascota()">Cancelar</button>
+          <button class="btn-save" (click)="guardarEditMascota()"
+            [disabled]="!editMascotaForm.nombre || !editMascotaForm.especie || savingEditMascota">
+            {{ savingEditMascota ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Nueva Sepultura ─────────────────────────── -->
+  @if (modalSepVisible) {
+    <div class="modal-overlay" (click)="cerrarModalSep()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Nueva sepultura</h3>
+          <button class="modal-close" (click)="cerrarModalSep()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (sepErrorMsg) {
+            <div class="modal-error">{{ sepErrorMsg }}</div>
+          }
+          @if (loadingModal) {
+            <div class="modal-loading">
+              <div class="modal-spinner"></div>
+              Cargando...
+            </div>
+          } @else {
+            <div class="form-grid-2col">
+              <div class="form-field">
+                <label>N° Ficha</label>
+                <input type="text" [(ngModel)]="sepForm.numero_ficha" placeholder="N° de ficha" />
+              </div>
+              <div class="form-field">
+                <label>Tipo *</label>
+                <select [(ngModel)]="sepForm.tipo">
+                  @for (t of tiposSepultura; track t.id) {
+                    <option [value]="t.nombre">{{ t.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Quién sepulta</label>
+                <select [(ngModel)]="sepForm.encargado">
+                  <option value="">— Seleccionar —</option>
+                  @for (e of encargados; track e.id) {
+                    <option [value]="e.nombre">{{ e.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-field"></div>
+              <div class="form-field">
+                <label>Ubicación anterior</label>
+                <input type="text" [(ngModel)]="sepForm.ubicacion_vieja" placeholder="Ubicación anterior" />
+              </div>
+              <div class="form-field">
+                <label>Ubicación actual</label>
+                <input type="text" [(ngModel)]="sepForm.ubicacion_nueva" placeholder="Ubicación actual" />
+              </div>
+              <div class="form-field form-field-full">
+                <label>Observaciones</label>
+                <input type="text" [(ngModel)]="sepForm.observaciones" placeholder="Observaciones" />
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalSep()">Cancelar</button>
+          <button class="btn-save" (click)="guardarSepultura()"
+            [disabled]="loadingModal || !sepForm.tipo || savingSep">
+            {{ savingSep ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Editar Sepultura ──────────────────────── -->
+  @if (modalEditSepVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEditSep()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Editar sepultura</h3>
+          <button class="modal-close" (click)="cerrarModalEditSep()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (editSepErrorMsg) {
+            <div class="modal-error">{{ editSepErrorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>Tipo</label>
+              <input type="text" [(ngModel)]="editSepForm.tipo" placeholder="Tipo de sepultura" />
+            </div>
+            <div class="form-field">
+              <label>N° Ficha</label>
+              <input type="text" [(ngModel)]="editSepForm.numero_ficha" placeholder="N° de ficha" />
+            </div>
+            <div class="form-field">
+              <label>Quién sepulta</label>
+              <select [(ngModel)]="editSepForm.encargado">
+                <option value="">— Seleccionar —</option>
+                @for (e of encargados; track e.id) {
+                  <option [value]="e.nombre">{{ e.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field"></div>
+            <div class="form-field">
+              <label>Ubicación anterior</label>
+              <input type="text" [(ngModel)]="editSepForm.ubicacion_vieja" placeholder="Ubicación anterior" />
+            </div>
+            <div class="form-field">
+              <label>Ubicación actual</label>
+              <input type="text" [(ngModel)]="editSepForm.ubicacion_nueva" placeholder="Ubicación actual" />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Observaciones</label>
+              <input type="text" [(ngModel)]="editSepForm.observaciones" placeholder="Observaciones" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEditSep()">Cancelar</button>
+          <button class="btn-save" (click)="guardarEditSep()" [disabled]="savingEditSep">
+            {{ savingEditSep ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Editar Contrato ────────────────────────── -->
+  @if (modalEditContratoVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEditContrato()">
+      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Editar contrato</h3>
+          <button class="modal-close" (click)="cerrarModalEditContrato()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (editContratoErrorMsg) {
+            <div class="modal-error">{{ editContratoErrorMsg }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>Fecha de pago</label>
+              <input type="date" [(ngModel)]="editContratoForm.fecha_pago" />
+            </div>
+            <div class="form-field">
+              <label>Fecha de vencimiento</label>
+              <input type="date" [(ngModel)]="editContratoForm.fecha_vencimiento" />
+            </div>
+            <div class="form-field">
+              <label>Monto cancelado *</label>
+              <input type="text" inputmode="numeric"
+                [value]="montoEditContratoStr"
+                (input)="onMontoEditContratoInput($any($event.target).value)"
+                (blur)="onMontoEditContratoBlur()"
+                placeholder="$ 0" />
+            </div>
+            <div class="form-field">
+              <label>Forma de pago</label>
+              <select [(ngModel)]="editContratoForm.forma_pago">
+                @for (f of formasPago; track f.id) {
+                  <option [value]="f.nombre">{{ f.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field form-field-full">
+              <label>N° Comprobante</label>
+              <input type="text" [(ngModel)]="editContratoForm.numero_comprobante" placeholder="Número de comprobante" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEditContrato()">Cancelar</button>
+          <button class="btn-save" (click)="guardarEditContrato()" [disabled]="savingEditContrato || !editContratoForm.valor_renovacion">
+            {{ savingEditContrato ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Marcar Terminada ───────────────────────── -->
+  @if (modalTerminadoVisible) {
+    <div class="modal-overlay" (click)="cerrarModalTerminado()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Marcar sepultura como terminada</h3>
+          <button class="modal-close" (click)="cerrarModalTerminado()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (terminadoErrorMsg) {
+            <div class="modal-error">{{ terminadoErrorMsg }}</div>
+          }
+          <p class="modal-confirm-text">
+            Esta acción marcará la sepultura como <strong>TERMINADA</strong>. No se podrá revertir fácilmente.
+          </p>
+          <div class="form-field form-field-full">
+            <label>Comentario / motivo (opcional)</label>
+            <textarea [(ngModel)]="terminadoComentario" rows="3" placeholder="Ej: Contrato finalizado, traslado, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalTerminado()">Cancelar</button>
+          <button class="btn-save btn-terminado-confirm" (click)="confirmarTerminado()" [disabled]="savingTerminado">
+            {{ savingTerminado ? 'Guardando...' : 'Confirmar' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

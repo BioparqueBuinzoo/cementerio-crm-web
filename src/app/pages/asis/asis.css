@@ -1,0 +1,508 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.sidebar {
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #111b14);
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.45s ease;
+  box-shadow: 1px 0 0 var(--color-border, #d4ddd7), var(--shadow-sm, 0 1px 4px rgba(0,0,0,.06));
+  position: relative;
+  z-index: 100;
+}
+
+.sidebar-collapsed {
+  width: 72px;
+}
+
+/* ── Sidebar Header ──────────────────────────────────── */
+.sidebar-header {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-2, #e8efea);
+  background: var(--color-surface, #ffffff);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.logo-img {
+  width: 100%;
+  max-height: 52px;
+  object-fit: contain;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.35s ease, transform 0.45s ease, max-height 0.45s ease;
+}
+
+.sidebar-collapsed .logo-img {
+  opacity: 0;
+  transform: scale(0.6);
+  max-height: 0;
+  pointer-events: none;
+}
+
+.logo-text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  overflow: hidden;
+}
+
+.logo-text {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-display, 'Montserrat', sans-serif);
+  white-space: nowrap;
+  color: var(--color-primary-deeper, #1b4332);
+  letter-spacing: -0.01em;
+}
+
+.logo-subtitle {
+  font-size: 0.65rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--color-text-muted, #6b7d70);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toggle-btn {
+  background: var(--color-surface-2, #f6f9f7);
+  border: 1px solid var(--color-border-2, #e8efea);
+  color: var(--color-text-muted, #6b7d70);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-btn:hover {
+  background: var(--color-border-2, #e8efea);
+  color: var(--color-primary-dark, #2d6a4f);
+  border-color: var(--color-border, #d4ddd7);
+}
+
+/* ── Navigation ──────────────────────────────────────── */
+.sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.6875rem 1rem;
+  margin: 0 0.5rem;
+  color: var(--color-text-muted, #6b7d70);
+  text-decoration: none;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.nav-item:hover {
+  background: var(--color-surface-2, #f6f9f7);
+  color: var(--color-primary-dark, #2d6a4f);
+}
+
+.nav-item.active {
+  background: rgba(45, 106, 79, 0.1);
+  color: var(--color-primary-dark, #2d6a4f);
+  font-weight: 600;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.nav-item.active .nav-icon {
+  opacity: 1;
+}
+
+.nav-text {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-collapsed .nav-text {
+  display: none;
+}
+
+.sidebar-collapsed .nav-item {
+  margin: 0 0.25rem;
+  padding: 0.6875rem;
+  justify-content: center;
+}
+
+/* ── Sidebar Footer ──────────────────────────────────── */
+.sidebar-footer {
+  padding: 0.75rem;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border-2, #e8efea);
+}
+
+/* Session Timer */
+.session-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.5rem;
+  background: var(--color-surface-2, #f6f9f7);
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--color-border-2, #e8efea);
+  flex-wrap: wrap;
+}
+
+.session-timer.session-critical {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.session-timer.session-critical .timer-icon,
+.session-timer.session-critical .timer-value {
+  color: #dc2626;
+}
+
+.session-timer.session-critical .timer-progress {
+  background: #dc2626;
+}
+
+.timer-icon {
+  color: var(--color-primary-dark, #2d6a4f);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.timer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.timer-label {
+  font-size: 0.6rem;
+  color: var(--color-text-muted, #6b7d70);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.timer-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text, #111b14);
+  font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.timer-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--color-border-2, #e8efea);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.timer-progress {
+  height: 100%;
+  background: var(--color-primary-dark, #2d6a4f);
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+
+/* App Version */
+.app-version {
+  text-align: center;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.app-version span {
+  font-size: 0.625rem;
+  color: var(--color-text-muted, #6b7d70);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* User info */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--color-surface-2, #f6f9f7);
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--color-border-2, #e8efea);
+  overflow: hidden;
+}
+
+.user-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-dark, #2d6a4f);
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-text, #111b14);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted, #6b7d70);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: var(--color-primary-dark, #2d6a4f);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.15rem;
+}
+
+.user-role-none {
+  color: var(--color-text-muted, #6b7d70);
+  font-style: italic;
+}
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-2, #e8efea);
+  color: var(--color-text-muted, #6b7d70);
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  overflow: hidden;
+}
+
+.logout-btn:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.notif-email-btn {
+  opacity: 0.6;
+  cursor: not-allowed;
+  margin-bottom: 0.25rem;
+}
+.notif-email-btn:hover {
+  background: var(--color-surface, #ffffff);
+  border-color: var(--color-border-2, #e8efea);
+  color: var(--color-text-muted, #6b7d70);
+}
+
+.logout-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-text {
+  white-space: nowrap;
+}
+
+/* ── Collapsed footer ────────────────────────────────── */
+.sidebar-collapsed .sidebar-footer {
+  padding: 0.5rem;
+}
+
+.sidebar-collapsed .session-timer {
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.sidebar-collapsed .user-info {
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.sidebar-collapsed .logout-btn {
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+/* ── Main Content ────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-bg, #edf2ee);
+}
+
+/* router-outlet inserta componentes dinámicamente — los _ngcontent
+   de asis.css no alcanzan esos hosts. Cada componente de página
+   se dimensiona desde su propio :host. Se apunta explícitamente al
+   hermano insertado por el router (no *:last-child) para que el
+   footer, que también vive dentro de .main-content, nunca compita
+   por ese flex:1. */
+.main-content > router-outlet + * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Animación de cambio de pestaña ─────────────────── */
+.main-content > router-outlet + * {
+  animation: page-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Scrollbar sidebar ───────────────────────────────── */
+.sidebar-nav::-webkit-scrollbar       { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--color-border, #d4ddd7); border-radius: 2px; }
+
+.nav-item-warning:hover, .nav-item-warning.active { color: #d97706 !important; }
+.nav-item-warning.active { background: rgba(245,158,11,.1) !important; }
+.nav-item-danger:hover,  .nav-item-danger.active  { color: #dc2626 !important; }
+.nav-item-danger.active  { background: rgba(220,38,38,.1) !important; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 1000;
+  }
+
+  .sidebar-collapsed {
+    transform: translateX(-100%);
+  }
+
+  .main-content {
+    width: 100%;
+  }
+}
+
+/* ── App footer ──────────────────────────────────────── */
+/* Parte del flujo flex de .main-content (no fixed): así hereda el
+   ancho disponible sin duplicar el ancho del sidebar en px, y no
+   compite en z-index con modales ni con el sidebar en mobile. */
+.app-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 1.5rem;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border-2, #e8efea);
+}
+
+.app-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--color-text-muted, #6b7d70);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.app-footer-version {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(45, 106, 79, 0.1);
+  color: var(--color-primary-dark, #2d6a4f);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.app-footer-sep {
+  opacity: 0.5;
+}
+
+.app-footer-author {
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .app-footer { height: auto; min-height: 40px; padding: 0.5rem 1rem; }
+  .app-footer-inner { flex-wrap: wrap; justify-content: center; row-gap: 0.25rem; font-size: 0.6875rem; text-align: center; }
+}

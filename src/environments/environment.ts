@@ -1,0 +1,21 @@
+export const environment = {
+  production: false,
+  azureAd: {
+    clientId: 'e9fd42e2-3205-443e-9ffa-dbc7068f7d42',
+    authority: 'https://login.microsoftonline.com/1a55ad37-698e-43fa-b253-044422bc5439',
+    redirectUri: 'http://localhost:4200',
+    tokenRenewalOffsetSeconds: 300,
+    sessionDurationHours: 9,
+  },
+  apiUrl: 'http://localhost:3100',
+  apiUrlClientes: 'http://localhost:3100/api/clientes',
+  apiUrlSepulturas: 'http://localhost:3100/api/sepulturas',
+  apiUrlMascotas: 'http://localhost:3100/api/mascotas',
+  apiUrlContratos: 'http://localhost:3100/api/contratos',
+  apiUrlTiposSepulturas: 'http://localhost:3100/api/tipos-sepulturas',
+  apiUrlFormasPago: 'http://localhost:3100/api/formas-pago',
+  apiUrlUsuarios: 'http://localhost:3100/api/usuarios',
+  apiUrlEncargados: 'http://localhost:3100/api/encargados',
+  apiUrlObservacionesClientes: 'http://localhost:3100/api/clientes',
+  apiUrlAsisUsers: 'http://localhost:3100/api/asis-users',
+};

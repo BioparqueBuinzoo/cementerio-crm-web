@@ -1,0 +1,110 @@
+<div class="page-container">
+  <div class="page-header" [class.page-header-danger]="isExpired">
+    <a routerLink="/asis" class="btn-back" title="Volver al inicio">
+      <re-icon name="chevron-left" width="20" height="20"></re-icon>
+    </a>
+    <div class="header-title">
+      <re-icon name="alert" class="header-brand-icon" width="24" height="24"></re-icon>
+      <div class="title-text">
+        <h1>{{ isExpired ? 'Contratos vencidos' : 'Contratos por vencer' }}</h1>
+        <span>
+          {{ isExpired ? 'Pendientes de renovación' : 'Próximos 90 días' }} · {{ total }} registro(s)
+        </span>
+      </div>
+    </div>
+    <button
+      class="btn-notify-all"
+      type="button"
+      [disabled]="loading || total === 0 || massNotificationLoading || notificationLoadingId !== null"
+      (click)="notifyAll()"
+    >
+      <re-icon name="envelope" width="16" height="16"></re-icon>
+      {{ massNotificationLoading ? 'Preparando…' : 'Notificar todos' }}
+    </button>
+  </div>
+
+  @if (notificationMessage || notificationError || activeBatch) {
+    <div class="notification-status" [class.notification-status-error]="notificationError">
+      <div>
+        <strong>{{ notificationError ? 'No se pudo completar' : 'Notificaciones' }}</strong>
+        <span>{{ notificationError || notificationMessage }}</span>
+      </div>
+      @if (activeBatch && activeBatch.status !== 'completed' && activeBatch.status !== 'completed_with_errors') {
+        <span class="notification-progress">
+          {{ activeBatch.sentCount }} de {{ activeBatch.recipientCount }} enviados
+        </span>
+      }
+    </div>
+  }
+
+  <div class="table-card">
+    @if (loading) {
+      <div class="table-overlay"><div class="spinner spinner-lg"></div><span>Cargando...</span></div>
+    }
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Ficha</th><th>Tipo</th><th>Cliente</th>
+            <th>{{ isExpired ? 'Venció' : 'Fecha vencimiento' }}</th>
+            <th>{{ isExpired ? 'Atraso' : 'Días restantes' }}</th>
+            <th>Notificación</th><th>Ficha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of data; track item.id_sepultura) {
+            <tr class="row-clickable" (dblclick)="goToClient(item.id_cliente)">
+              <td class="col-num">{{ (page - 1) * limit + $index + 1 }}</td>
+              <td class="col-ficha">#{{ item.numero_ficha }}</td>
+              <td>{{ item.tipo }}</td>
+              <td class="col-nombre">{{ item.nombre_cliente }}</td>
+              <td>{{ formatDate(item.fecha_vencimiento) }}</td>
+              <td>
+                <span class="dias-badge" [class.dias-danger]="isExpired" [class.dias-warning]="!isExpired">
+                  {{ formatDays(item.dias_restantes) }}
+                </span>
+              </td>
+              <td class="col-notification">
+                <button
+                  class="btn-notify-one"
+                  type="button"
+                  [disabled]="notificationLoadingId !== null || massNotificationLoading"
+                  [title]="'Enviar aviso por correo para la ficha ' + item.numero_ficha"
+                  (click)="notifyIndividual(item, $event)"
+                >
+                    <re-icon name="download" width="18" height="18"></re-icon>
+                  {{ notificationLoadingId === item.id_sepultura ? 'Enviando…' : 'Notificar' }}
+                </button>
+              </td>
+              <td class="col-action">
+                <a [routerLink]="['/asis/clientes', item.id_cliente]" class="btn-ficha" title="Ver ficha del cliente" (click)="$event.stopPropagation()">
+                  <re-icon name="arrow-right" width="14" height="14"></re-icon>
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading) {
+              <tr><td colspan="8" class="empty-row">{{ isExpired ? 'Sin contratos vencidos.' : 'Sin contratos por vencer en los próximos 90 días.' }}</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer">
+      <span class="record-count">{{ total }} contrato(s)</span>
+      @if (totalPages > 1) {
+        <div class="pagination">
+          <button class="pag-btn pag-nav" (click)="load(1)" [disabled]="page === 1 || loading" title="Primera">«</button>
+          <button class="pag-btn pag-nav" (click)="load(page - 1)" [disabled]="page === 1 || loading">‹</button>
+          @for (pageNumber of pageNums(); track $index) {
+            @if (pageNumber === null) { <span class="pag-ellipsis">…</span> }
+            @else { <button class="pag-btn pag-num" [class.pag-active]="pageNumber === page" [disabled]="loading" (click)="load(pageNumber)">{{ pageNumber }}</button> }
+          }
+          <button class="pag-btn pag-nav" (click)="load(page + 1)" [disabled]="page === totalPages || loading">›</button>
+          <button class="pag-btn pag-nav" (click)="load(totalPages)" [disabled]="page === totalPages || loading" title="Última">»</button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

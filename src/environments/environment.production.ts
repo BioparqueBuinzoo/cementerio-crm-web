@@ -1,0 +1,21 @@
+export const environment = {
+  production: true,
+  azureAd: {
+    clientId: 'e9fd42e2-3205-443e-9ffa-dbc7068f7d42',
+    authority: 'https://login.microsoftonline.com/1a55ad37-698e-43fa-b253-044422bc5439',
+    redirectUri: 'https://crm.parquedeasis.cl',
+    tokenRenewalOffsetSeconds: 300,
+    sessionDurationHours: 9,
+  },
+  apiUrl: '',
+  apiUrlClientes: '/api/clientes',
+  apiUrlSepulturas: '/api/sepulturas',
+  apiUrlMascotas: '/api/mascotas',
+  apiUrlContratos: '/api/contratos',
+  apiUrlTiposSepulturas: '/api/tipos-sepulturas',
+  apiUrlFormasPago: '/api/formas-pago',
+  apiUrlUsuarios: '/api/usuarios',
+  apiUrlEncargados: '/api/encargados',
+  apiUrlObservacionesClientes: '/api/clientes',
+  apiUrlAsisUsers: '/api/asis-users',
+};

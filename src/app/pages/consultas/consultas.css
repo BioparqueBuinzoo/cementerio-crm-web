@@ -1,0 +1,108 @@
+.consultas-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  gap: 16px;
+  background: var(--color-bg, #eeeeee);
+}
+
+/* Header */
+.consultas-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--page-header-border);
+  flex-shrink: 0;
+}
+
+.consultas-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--page-header-min-height, 56px);
+  padding: var(--page-header-padding-y, 14px) var(--page-header-padding-x, 24px);
+  background: var(--page-header-bg);
+  position: relative;
+}
+
+.title-icon {
+  width: var(--page-header-icon-size, 36px);
+  height: var(--page-header-icon-size, 36px);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title-icon svg {
+  width: var(--page-header-icon-svg, 20px);
+  height: var(--page-header-icon-svg, 20px);
+  color: #ffffff;
+}
+
+.title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1;
+}
+
+.title-text h1 {
+  font-size: var(--page-header-title-size, 1.125rem);
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.title-text span {
+  font-size: var(--page-header-subtitle-size, 0.75rem);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+/* Tabs */
+.consultas-tabs {
+  display: flex;
+  gap: 2px;
+  background: #ffffff;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.consultas-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.consultas-tab:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.consultas-tab.active {
+  color: #ffffff;
+  background: var(--color-secondary, #1d7021);
+  font-weight: 600;
+}
+
+/* Content */
+.consultas-content {
+  flex: 1;
+  overflow-y: auto;
+}

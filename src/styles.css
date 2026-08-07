@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+/* ── Fonts ───────────────────────────────────────────── */
+@import "@fontsource/inter/300.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+
+/* Montserrat se conserva como fuente de display para títulos de marca */
+@import "@fontsource/montserrat/700.css";
+
+/* ── Design Tokens ───────────────────────────────────── */
+:root {
+  /* Fuente */
+  --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Montserrat', 'Inter', sans-serif;
+
+  /* Paleta verde — Parque de Asís (matching parquedeasis.cl) */
+  --color-primary-deeper: #1F5843;   /* verde oscuro de marca  */
+  --color-primary-dark:   #2a7d2e;   /* verde principal web    */
+  --color-primary:        #3aaa36;   /* verde vibrante claro   */
+  --color-secondary:      #2a7d2e;   /* alias para uso en botones */
+  --color-accent:         #5aba52;   /* verde acento           */
+
+  /* Superficies */
+  --color-bg:       #edf2ee;   /* fondo principal — gris con tinte verde sutil */
+  --color-surface:  #ffffff;
+  --color-surface-2: #f6f9f7;  /* superficie secundaria — card headers, etc.  */
+
+  /* Bordes */
+  --color-border:   #d4ddd7;
+  --color-border-2: #e8efea;   /* borde más suave */
+
+  /* Texto */
+  --color-text:       #111b14;   /* casi negro con tinte verde */
+  --color-text-2:     #374940;   /* texto secundario */
+  --color-text-muted: #6b7d70;   /* texto apagado */
+
+  /* Sombras */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-green: 0 4px 16px rgba(45,106,79,.15);
+
+  /* Radio */
+  --radius-sm: 8px;
+  --radius:    10px;
+  --radius-lg: 14px;
+
+  /* Page header unificado (misma altura/dimensión en todas las páginas) */
+  --page-header-min-height:   56px;
+  --page-header-padding-y:    14px;
+  --page-header-padding-x:    24px;
+  --page-header-icon-size:    36px;
+  --page-header-icon-svg:     20px;   /* SVG dentro del icono del header */
+  --page-header-title-size:   1.125rem;
+  --page-header-subtitle-size: 0.75rem;
+  --page-header-bg:     var(--color-primary-deeper, #1b4332);
+  --page-header-border: rgba(0,0,0,.08);
+}
+
+/* ── Reset / Base ────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Cadena de altura: html → body → app-root → app-asis */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* app-root es inline por defecto en Angular — hay que convertirlo a bloque */
+app-root {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Scrollbars globales */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #c4ccc6; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9aaa9d; }
+
+@theme {
+  --font-sans: var(--font-sans);
+}
+
+/* ── Paginación unificada (todas las tablas) ───────────────────────── */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-border-2, #e8efea);
+  background: var(--color-surface-2, #f6f9f7);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.record-count {
+  font-size: 12px;
+  color: var(--color-text-muted, #6b7d70);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pag-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #d4ddd7);
+  background: var(--color-surface, #fff);
+  color: var(--color-primary-dark, #2d6a4f);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pag-btn:hover:not(:disabled) {
+  background: #f0f7f2;
+  border-color: var(--color-primary-dark, #2d6a4f);
+}
+
+.pag-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.pag-nav {
+  padding: 0 8px;
+}
+
+.pag-num {
+  min-width: 32px;
+}
+
+.pag-active {
+  background: var(--color-primary-dark, #2d6a4f) !important;
+  color: #fff !important;
+  border-color: var(--color-primary-dark, #2d6a4f) !important;
+  font-weight: 700;
+}
+
+.pag-ellipsis {
+  font-size: 13px;
+  color: var(--color-text-muted, #6b7d70);
+  padding: 0 4px;
+  align-self: center;
+}

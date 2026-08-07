@@ -1,0 +1,150 @@
+<div #clientesContainer class="clientes-container">
+
+  <!-- ── Header ─────────────────────────────────── -->
+  <div class="clientes-header">
+    <div class="header-left">
+      <a routerLink="/asis" class="btn-back" title="Volver al inicio">
+        <re-icon name="chevron-left" width="20" height="20"></re-icon>
+      </a>
+      <div class="clientes-title">
+      <re-icon name="users" class="header-brand-icon" width="24" height="24"></re-icon>
+      <div class="title-text">
+        <h1>Clientes</h1>
+        <span>Gestión de clientes del cementerio</span>
+      </div>
+    </div>
+    </div><!-- /header-left -->
+    <div class="clientes-actions">
+      <div class="rut-search-group">
+        <div class="clientes-search">
+          <re-icon name="search" class="search-icon" width="20" height="20"></re-icon>
+          <input class="search-input" type="text" placeholder="RUT o nombre completo…"
+            [value]="buscarInput()"
+            (input)="onBuscarInput($any($event.target).value)"
+            (keydown)="onKeydown($event)" />
+        </div>
+        <button class="btn-search" (click)="buscar()">Buscar</button>
+        @if (buscarInput()) {
+          <button class="btn-clear" (click)="limpiar()" title="Limpiar búsqueda">✕</button>
+        }
+      </div>
+      <button class="btn-export" (click)="exportar()" [disabled]="exportando" title="Exportar listado a Excel">
+        <re-icon name="download" width="14" height="14"></re-icon>
+        {{ exportando ? 'Descargando…' : 'Exportar Excel' }}
+      </button>
+      <button (click)="toggleCreateForm()" class="btn-new">
+        @if (showCreateForm()) { Cancelar } @else { + Nuevo cliente }
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Error state ─────────────────────────────── -->
+  @if (error()) {
+      <div class="clientes-error">
+        <re-icon name="alert" width="20" height="20"></re-icon>
+        <span>{{ error() }}</span>
+        <button (click)="retry()" class="retry-btn">Reintentar</button>
+      </div>
+  } @else {
+
+    <!-- ── Table card (table + pagination all in one) ── -->
+    <div #tableWrapper class="table-card table-wrapper-with-loading">
+
+      <!-- initial loading -->
+      @if (loading() && clientes().length === 0) {
+        <div class="table-loading-inner">
+          <div class="spinner"></div>
+          <span>Cargando clientes…</span>
+        </div>
+      } @else {
+
+        <!-- page-change overlay -->
+        @if (loading()) {
+          <div class="table-loading-overlay" aria-busy="true">
+            <div class="spinner spinner-overlay"></div>
+            <span>Cargando…</span>
+          </div>
+        }
+
+        <!-- scrollable area -->
+        <div class="table-scroll">
+          <table class="clientes-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>RUT</th>
+                <th>Nombre completo</th>
+                <th>Dirección</th>
+                <th>Comuna</th>
+                <th>Ciudad</th>
+                <th>Teléfono</th>
+                <th>Celular</th>
+                <th>Email</th>
+                <th class="th-actions">Ir a ficha</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cliente of displayedClientes(); track cliente.id) {
+                <tr class="row-clickable" (dblclick)="irAFicha(cliente.id)">
+                  @for (field of ['id', 'rut', 'nombre_completo', 'direccion', 'comuna', 'ciudad', 'telefono', 'celular', 'email']; track field) {
+                    <td>{{ $any(cliente)[field] || '—' }}</td>
+                  }
+                      <td class="col-actions">
+                        <a [routerLink]="['/asis/clientes', cliente.id]" class="btn-link-ficha" title="Ver ficha">
+                          <re-icon name="arrow-right" width="18" height="18"></re-icon>
+                        </a>
+                      </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="10" class="empty-row">No se encontraron clientes.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Card footer: record count + pagination ── -->
+        <div class="card-footer">
+          <span class="record-count">
+            {{ displayedClientes().length }} de {{ total() }} cliente(s)
+          </span>
+          <div class="pagination">
+            <!-- Primera página -->
+            <button (click)="changePage(1)" [disabled]="page() === 1 || loading()" class="pag-btn pag-nav" title="Primera página">
+              <re-icon name="chevrons-left-solid" width="13" height="13"></re-icon>
+            </button>
+            <!-- Anterior -->
+            <button (click)="changePage(page() - 1)" [disabled]="page() === 1 || loading()" class="pag-btn pag-nav" title="Anterior">
+              <re-icon name="chevron-left-solid" width="13" height="13"></re-icon>
+            </button>
+
+            @for (p of pageNumbers(); track $index) {
+              @if (p === null) {
+                <span class="pag-ellipsis">…</span>
+              } @else {
+                <button
+                  class="pag-btn pag-num"
+                  [class.pag-active]="p === page()"
+                  [disabled]="loading()"
+                  (click)="changePage(p)"
+                >{{ p }}</button>
+              }
+            }
+
+            <!-- Siguiente -->
+            <button (click)="changePage(page() + 1)" [disabled]="page() === totalPages() || loading()" class="pag-btn pag-nav" title="Siguiente">
+              <re-icon name="chevron-right-solid" width="13" height="13"></re-icon>
+            </button>
+            <!-- Última página -->
+            <button (click)="changePage(totalPages())" [disabled]="page() === totalPages() || loading()" class="pag-btn pag-nav" title="Última página">
+              <re-icon name="chevrons-right-solid" width="13" height="13"></re-icon>
+            </button>
+          </div>
+        </div>
+
+      }
+    </div>
+  }
+
+</div>

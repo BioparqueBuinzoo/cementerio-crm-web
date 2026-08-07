@@ -1,0 +1,64 @@
+<div class="login-wrapper">
+
+  <!-- Panel izquierdo: Branding con foto de fondo -->
+  <div class="login-brand">
+    <div class="brand-overlay"></div>
+    <img class="brand-decoration" src="logos/ramita.png" alt="">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <img src="logos/logo-parque-asis.svg" alt="Parque de Asis">
+      </div>
+    </div>
+    <div class="brand-footer">
+      <span>Parque de Asis &copy; {{ currentYear }}</span>
+    </div>
+  </div>
+
+  <!-- Panel derecho: Formulario -->
+  <div class="login-form-panel">
+    <div class="login-form-content">
+
+      <div class="form-header">
+        <h1>Bienvenido</h1>
+        <p>Ingresa al panel de administración con tu cuenta corporativa.</p>
+      </div>
+
+      <button
+        class="btn-microsoft"
+        (click)="login()"
+        [disabled]="isLoading()"
+      >
+        <img class="microsoft-icon" src="logos/microsoft.svg" alt="Microsoft logo" width="20" height="20" />
+        @if (isLoading()) {
+          <span>Conectando...</span>
+        } @else {
+          <span>Iniciar sesión con Microsoft</span>
+        }
+      </button>
+
+      @if (authError() === 'SIN_ROL') {
+        <div class="login-sin-rol">
+          <div class="sin-rol-icon">
+            <re-icon name="users" width="28" height="28"></re-icon>
+          </div>
+          <div class="sin-rol-body">
+            <strong>Cuenta registrada — sin acceso aún</strong>
+            <p>Tu cuenta fue reconocida pero no tiene un rol asignado en este sistema.</p>
+            <p>Solicita acceso al administrador indicando tu correo corporativo.</p>
+          </div>
+        </div>
+      } @else if (errorMessage()) {
+        <div class="login-error">
+          <re-icon name="alert" width="16" height="16"></re-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div class="form-footer">
+        <span>Acceso exclusivo para personal autorizado</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
