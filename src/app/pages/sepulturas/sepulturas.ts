@@ -25,6 +25,8 @@ export class Sepulturas implements OnInit {
   readonly total       = this.sepulturaService.total;
 
   readonly fichaInput = signal('');
+  readonly filtersOpen = signal(true);
+  readonly tipoFilter = signal('');
 
   readonly pageNumbers = computed<(number | null)[]>(() => {
     const total = this.totalPages();
@@ -43,12 +45,21 @@ export class Sepulturas implements OnInit {
   }
 
   buscar(): void {
-    this.sepulturaService.getAll(1, 20, undefined, undefined, this.fichaInput().trim() || undefined);
+    this.loadFiltered(1);
   }
 
   limpiar(): void {
     this.fichaInput.set('');
-    this.sepulturaService.getAll();
+    this.loadFiltered(1);
+  }
+
+  toggleFilters(): void { this.filtersOpen.update(open => !open); }
+
+  applyFilters(): void { this.loadFiltered(1); }
+
+  clearFilters(): void {
+    this.tipoFilter.set('');
+    this.loadFiltered(1);
   }
 
   onKeydown(e: KeyboardEvent): void {
@@ -58,7 +69,7 @@ export class Sepulturas implements OnInit {
   changePage(newPage: number): void {
     if (newPage < 1 || newPage > this.totalPages()) return;
     this.scrollContentToTop();
-    this.sepulturaService.getAll(newPage, 20, undefined, undefined, this.fichaInput().trim() || undefined);
+    this.loadFiltered(newPage);
   }
 
   private scrollContentToTop(): void {
@@ -69,10 +80,17 @@ export class Sepulturas implements OnInit {
   }
 
   retry(): void {
-    this.sepulturaService.getAll(this.page());
+    this.loadFiltered(this.page());
   }
 
   irACliente(idCliente: number): void {
     this.router.navigate(['/asis/clientes', idCliente]);
+  }
+
+  private loadFiltered(page: number): void {
+    void this.sepulturaService.getAll(
+      page, 20, undefined, undefined, this.fichaInput().trim() || undefined,
+      undefined, this.tipoFilter().trim() || undefined
+    );
   }
 }

@@ -1,17 +1,11 @@
 <div #mascotasContainer class="mascotas-container">
   <div class="mascotas-header">
-    <div class="header-left">
-      <a routerLink="/asis" class="btn-back" title="Volver al inicio">
-        <re-icon name="chevron-left" width="20" height="20"></re-icon>
-      </a>
-      <div class="mascotas-title">
-      <re-icon name="paw" class="header-brand-icon" width="32" height="32"></re-icon>
-      <div class="title-text">
+    <div class="management-heading">
+      <div>
+        <span class="eyebrow">GESTIÓN DE MASCOTAS</span>
         <h1>Mascotas</h1>
-        <span>Registro de mascotas del cementerio</span>
       </div>
     </div>
-    </div><!-- /header-left -->
     <div class="mascotas-actions">
       <div class="rut-search-group">
         <div class="mascotas-search">
@@ -28,6 +22,29 @@
       </div>
     </div>
   </div>
+
+  @if (filtersOpen()) {
+    <div class="filters-panel">
+      <div class="filter-field">
+        <label for="mascota-species-filter">Especie</label>
+        <select id="mascota-species-filter" [value]="especieFilter()" (change)="especieFilter.set($any($event.target).value); applyFilters()">
+          <option value="">Todas las especies</option>
+          <option value="Perro">Perro</option>
+          <option value="Gato">Gato</option>
+          <option value="Otro">Otra especie</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="mascota-sex-filter">Sexo</label>
+        <select id="mascota-sex-filter" [value]="sexoFilter()" (change)="sexoFilter.set($any($event.target).value); applyFilters()">
+          <option value="">Todos</option>
+          <option value="Macho">Macho</option>
+          <option value="Hembra">Hembra</option>
+        </select>
+      </div>
+      <button class="filter-clear" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  }
 
   @if (error()) {
     <div class="mascotas-error">

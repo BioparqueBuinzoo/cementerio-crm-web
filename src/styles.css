@@ -17,20 +17,29 @@
   --font-display: 'Montserrat', 'Inter', sans-serif;
 
   /* Paleta verde — Parque de Asís (matching parquedeasis.cl) */
-  --color-primary-deeper: #1F5843;   /* verde oscuro de marca  */
+  --color-primary-deeper: #075b32;   /* verde oscuro del logotipo */
+  --color-primary-balanced: #2a7d2e; /* verde institucional del sitio web */
   --color-primary-dark:   #2a7d2e;   /* verde principal web    */
-  --color-primary:        #3aaa36;   /* verde vibrante claro   */
+  --color-primary:        #017e22;   /* verde de acciones del sitio web */
   --color-secondary:      #2a7d2e;   /* alias para uso en botones */
   --color-accent:         #5aba52;   /* verde acento           */
 
+  /* Estados semánticos — únicos en toda la app, no repetir hex sueltos */
+  --color-warning:        #d97706;
+  --color-warning-bg:     #fef3c7;
+  --color-warning-border: #fde68a;
+  --color-danger:         #dc2626;
+  --color-danger-bg:      #fee2e2;
+  --color-danger-border:  #fecaca;
+
   /* Superficies */
-  --color-bg:       #edf2ee;   /* fondo principal — gris con tinte verde sutil */
+  --color-bg:       #f7f7f7;   /* gris claro dominante en parquedeasis.cl */
   --color-surface:  #ffffff;
-  --color-surface-2: #f6f9f7;  /* superficie secundaria — card headers, etc.  */
+  --color-surface-2: #f7faf7;  /* superficie secundaria — card headers, etc.  */
 
   /* Bordes */
-  --color-border:   #d4ddd7;
-  --color-border-2: #e8efea;   /* borde más suave */
+  --color-border:   #d9e4db;
+  --color-border-2: #e9efea;   /* borde más suave */
 
   /* Texto */
   --color-text:       #111b14;   /* casi negro con tinte verde */
@@ -56,8 +65,8 @@
   --page-header-icon-svg:     20px;   /* SVG dentro del icono del header */
   --page-header-title-size:   1.125rem;
   --page-header-subtitle-size: 0.75rem;
-  --page-header-bg:     var(--color-primary-deeper, #1b4332);
-  --page-header-border: rgba(0,0,0,.08);
+  --page-header-bg:     linear-gradient(135deg, #ffffff 0%, #edf7ef 100%);
+  --page-header-border: #d5e6d8;
 }
 
 /* ── Reset / Base ────────────────────────────────────── */
@@ -175,4 +184,167 @@ app-root {
   color: var(--color-text-muted, #6b7d70);
   padding: 0 4px;
   align-self: center;
+}
+
+/* ── Accesibilidad y comportamiento responsivo compartido ─────────── */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(58, 170, 54, .38);
+  outline-offset: 2px;
+}
+
+:where(.table-scroll, .table-wrapper, .config-table-wrap, .venc-table-wrap) {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --page-header-padding-x: 14px;
+    --page-header-padding-y: 12px;
+    --page-header-icon-size: 32px;
+    --page-header-title-size: 1rem;
+    --page-header-subtitle-size: .6875rem;
+  }
+
+  .card-footer {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 9px 10px;
+  }
+
+  .record-count { text-align: center; }
+
+  .pagination {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 2px 1px 5px;
+    scrollbar-width: thin;
+  }
+
+  .pag-btn { flex: 0 0 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* El contenido usa un fondo neutro; la ilustración vive únicamente en el sidebar. */
+app-asis :is(
+  .inicio-container,
+  .clientes-container,
+  .sepulturas-container,
+  .mascotas-container,
+  .config-container,
+  .page-container,
+  .consultas-container,
+  .detalle-container
+  ) {
+  background-color: transparent !important;
+}
+
+/* Encabezados claros alineados con parquedeasis.cl. */
+app-asis :is(
+  .inicio-header,
+  .clientes-header,
+  .sepulturas-header,
+  .mascotas-header,
+  .config-header,
+  .detalle-header,
+  .consultas-title,
+  .page-header:not(.page-header-danger)
+) {
+  background: var(--page-header-bg) !important;
+  border-color: var(--page-header-border) !important;
+  box-shadow: var(--shadow-xs);
+}
+
+app-asis :is(
+  .inicio-header,
+  .clientes-header,
+  .sepulturas-header,
+  .mascotas-header,
+  .config-header,
+  .detalle-header,
+  .consultas-title,
+  .page-header:not(.page-header-danger)
+) :is(.brand-title, .title-text h1) {
+  color: var(--color-primary-deeper, #075b32) !important;
+  text-shadow: none !important;
+}
+
+app-asis :is(
+  .inicio-header,
+  .clientes-header,
+  .sepulturas-header,
+  .mascotas-header,
+  .config-header,
+  .detalle-header,
+  .consultas-title,
+  .page-header:not(.page-header-danger)
+) :is(.brand-subtitle, .title-text span) {
+  color: var(--color-text-muted, #6b7d70) !important;
+}
+
+app-asis :is(
+  .clientes-header,
+  .sepulturas-header,
+  .mascotas-header,
+  .config-header,
+  .detalle-header,
+  .consultas-title,
+  .page-header:not(.page-header-danger)
+) :is(.header-brand-icon, .title-icon svg) {
+  color: var(--color-primary, #017e22) !important;
+}
+
+app-asis :is(.detalle-header, .consultas-title) .title-icon {
+  background: #eaf5ec !important;
+  border-color: #cee4d2 !important;
+}
+
+app-asis :is(
+  .clientes-header,
+  .sepulturas-header,
+  .mascotas-header,
+  .detalle-header,
+  .page-header:not(.page-header-danger)
+) .btn-back {
+  color: var(--color-primary-deeper, #075b32) !important;
+  background: #fff !important;
+  border-color: var(--color-border, #d9e4db) !important;
+}
+
+app-asis :is(.clientes-header, .sepulturas-header, .mascotas-header) .search-input {
+  color: var(--color-text, #111b14) !important;
+  background: #fff !important;
+  border-color: var(--color-border, #d9e4db) !important;
+  backdrop-filter: none !important;
+}
+
+app-asis :is(.clientes-header, .sepulturas-header, .mascotas-header) .search-input::placeholder {
+  color: var(--color-text-muted, #6b7d70) !important;
+}
+
+app-asis :is(.clientes-header, .sepulturas-header, .mascotas-header) .search-icon {
+  color: var(--color-text-muted, #6b7d70) !important;
+}
+
+app-asis :is(.clientes-header, .sepulturas-header, .mascotas-header) :is(.btn-search, .btn-new) {
+  color: #fff !important;
+  background: var(--color-primary, #017e22) !important;
+  border-color: var(--color-primary, #017e22) !important;
+}
+
+app-asis :is(.clientes-header, .sepulturas-header, .mascotas-header) :is(.btn-clear, .btn-export),
+app-asis .detalle-header .btn-download,
+app-asis .page-header:not(.page-header-danger) .btn-notify-all {
+  color: var(--color-primary-dark, #2a7d2e) !important;
+  background: #fff !important;
+  border-color: #b9d8bf !important;
 }

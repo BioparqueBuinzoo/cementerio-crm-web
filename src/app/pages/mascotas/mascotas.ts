@@ -25,6 +25,9 @@ export class Mascotas implements OnInit {
   readonly total      = this.mascotaService.total;
 
   readonly nombreInput = signal('');
+  readonly filtersOpen = signal(true);
+  readonly especieFilter = signal('');
+  readonly sexoFilter = signal('');
 
   readonly pageNumbers = computed<(number | null)[]>(() => {
     const total = this.totalPages();
@@ -43,12 +46,22 @@ export class Mascotas implements OnInit {
   }
 
   buscar(): void {
-    this.mascotaService.getAll(1, 20, undefined, this.nombreInput().trim() || undefined);
+    this.loadFiltered(1);
   }
 
   limpiar(): void {
     this.nombreInput.set('');
-    this.mascotaService.getAll();
+    this.loadFiltered(1);
+  }
+
+  toggleFilters(): void { this.filtersOpen.update(open => !open); }
+
+  applyFilters(): void { this.loadFiltered(1); }
+
+  clearFilters(): void {
+    this.especieFilter.set('');
+    this.sexoFilter.set('');
+    this.loadFiltered(1);
   }
 
   onKeydown(e: KeyboardEvent): void {
@@ -58,7 +71,7 @@ export class Mascotas implements OnInit {
   changePage(newPage: number): void {
     if (newPage < 1 || newPage > this.totalPages()) return;
     this.scrollContentToTop();
-    this.mascotaService.getAll(newPage, 20, undefined, this.nombreInput().trim() || undefined);
+    this.loadFiltered(newPage);
   }
 
   private scrollContentToTop(): void {
@@ -69,7 +82,7 @@ export class Mascotas implements OnInit {
   }
 
   retry(): void {
-    this.mascotaService.getAll(this.page());
+    this.loadFiltered(this.page());
   }
 
   irACliente(idCliente: number | null | undefined): void {
@@ -80,5 +93,12 @@ export class Mascotas implements OnInit {
     if (!value) return '—';
     const [y, m, d] = (value as string).split('T')[0].split('-');
     return `${d}/${m}/${y}`;
+  }
+
+  private loadFiltered(page: number): void {
+    void this.mascotaService.getAll(
+      page, 20, undefined, this.nombreInput().trim() || undefined,
+      this.especieFilter(), this.sexoFilter(), undefined
+    );
   }
 }

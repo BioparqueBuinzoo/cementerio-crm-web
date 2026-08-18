@@ -1,13 +1,38 @@
-<div class="dashboard-container">
+<a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+
+<div
+  class="dashboard-container"
+  [class.mobile-nav-open]="isMobile() && isSidebarOpen()"
+  (keydown)="onShellKeydown($event)"
+>
+  @if (isMobile() && isSidebarOpen()) {
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="Cerrar menú de navegación"
+      (click)="closeSidebarOnMobile()"
+    ></button>
+  }
   <!-- Sidebar -->
-  <!-- CAMBIO: isSidebarOpen → isSidebarOpen() — es un Signal, se lee como función -->
-  <aside class="sidebar" [class.sidebar-collapsed]="!isSidebarOpen()">
+  <aside
+    id="main-navigation"
+    class="sidebar"
+    [class.sidebar-collapsed]="!isSidebarOpen()"
+    [attr.aria-hidden]="isMobile() && !isSidebarOpen()"
+    [attr.inert]="isMobile() && !isSidebarOpen() ? '' : null"
+  >
     <div class="sidebar-header">
       <div class="logo">
         <img class="logo-img" src="logos/logo-parque-asis.svg" alt="Parque de Asis">
       </div>
-      <button class="toggle-btn" (click)="toggleSidebar()">
-        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() en ambos @if -->
+      <button
+        type="button"
+        class="toggle-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-expanded]="isSidebarOpen()"
+        aria-controls="main-navigation"
+        [attr.aria-label]="isSidebarOpen() ? 'Contraer menú' : 'Expandir menú'"
+      >
         @if (isSidebarOpen()) {
           <re-icon name="chevron-left" width="18" height="18"></re-icon>
         } @else {
@@ -16,52 +41,68 @@
       </button>
     </div>
 
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" aria-label="Navegación principal">
+      @if (isSidebarOpen()) { <span class="nav-section-label">General</span> }
       <!-- INICIO -->
-      <a routerLink="/asis" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+      <a routerLink="/asis" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="home" width="20" height="20"></re-icon>
         </span>
-        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() — mismo patrón en todos los nav-item -->
         @if (isSidebarOpen()) { <span class="nav-text">INICIO</span> }
       </a>
+      @if (isSidebarOpen()) { <span class="nav-section-label">Gestión</span> }
       <!-- CLIENTES -->
-      <a routerLink="/asis/clientes" routerLinkActive="active" class="nav-item">
+      <a routerLink="/asis/clientes" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="users-alt" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">CLIENTES</span> }
       </a>
       <!-- SEPULTURAS -->
-      <a routerLink="/asis/sepulturas" routerLinkActive="active" class="nav-item">
+      <a routerLink="/asis/sepulturas" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="grid" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">SEPULTURAS</span> }
       </a>
       <!-- MASCOTAS -->
-      <a routerLink="/asis/mascotas" routerLinkActive="active" class="nav-item">
+      <a routerLink="/asis/mascotas" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="paw" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">MASCOTAS</span> }
       </a>
+      @if (isSidebarOpen()) { <span class="nav-section-label">Contratos</span> }
+      <!-- CONTRATOS ACTIVOS -->
+      <a routerLink="/asis/contratos-activos" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+        <span class="nav-icon">
+          <re-icon name="file-text" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">ACTIVOS</span> }
+      </a>
       <!-- CONTRATOS POR VENCER -->
-      <a routerLink="/asis/contratos-por-vencer" routerLinkActive="active" class="nav-item nav-item-warning">
+      <a routerLink="/asis/contratos-por-vencer" routerLinkActive="active" class="nav-item nav-item-warning" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="clock" width="20" height="20"></re-icon>
         </span>
-        @if (isSidebarOpen()) { <span class="nav-text">POR VENCER</span> }
+        @if (isSidebarOpen()) {
+          <span class="nav-text">POR VENCER</span>
+          @if (porVencerCount() > 0) { <span class="nav-badge nav-badge-warning">{{ porVencerCount() }}</span> }
+        }
       </a>
       <!-- CONTRATOS VENCIDOS -->
-      <a routerLink="/asis/contratos-vencidos" routerLinkActive="active" class="nav-item nav-item-danger">
+      <a routerLink="/asis/contratos-vencidos" routerLinkActive="active" class="nav-item nav-item-danger" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="alert" width="20" height="20"></re-icon>
         </span>
-        @if (isSidebarOpen()) { <span class="nav-text">VENCIDOS</span> }
+        @if (isSidebarOpen()) {
+          <span class="nav-text">VENCIDOS</span>
+          @if (vencidosCount() > 0) { <span class="nav-badge nav-badge-danger">{{ vencidosCount() }}</span> }
+        }
       </a>
+      @if (isSidebarOpen()) { <span class="nav-section-label">Administración</span> }
       <!-- CONFIGURACION -->
-      <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item">
+      <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="settings" width="20" height="20"></re-icon>
         </span>
@@ -70,55 +111,70 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="user-info">
-        <span class="user-icon">
-          <re-icon name="user" width="22" height="22"></re-icon>
-        </span>
-        <!-- CAMBIO: isSidebarOpen → isSidebarOpen() -->
-        @if (isSidebarOpen()) {
-          <div class="user-details">
-
-            <span class="user-name">{{ auth.currentUser()?.name }}</span>
-            <span class="user-email">{{ auth.currentUser()?.email }}</span>
-            <span class="user-role" [class.user-role-none]="auth.userRoles().length === 0">
-              {{ getUserRoleDisplay() }}
-            </span>
-          </div>
-        }
+      <div class="account-card">
+        <div class="account-heading">
+          <span class="user-avatar">
+          @if (auth.currentUser()?.pictureUrl && !profileImageFailed()) {
+            <img
+              [src]="auth.currentUser()?.pictureUrl"
+              [alt]="'Foto de ' + (auth.currentUser()?.name || 'usuario')"
+              referrerpolicy="no-referrer"
+              (error)="onProfileImageError()"
+            >
+          } @else {
+            <re-icon name="user" width="22" height="22"></re-icon>
+          }
+          </span>
+          @if (isSidebarOpen()) {
+            <div class="user-details">
+              <div class="user-name-row">
+                <span class="user-name">{{ auth.currentUser()?.name }}</span>
+                <span class="online-dot" title="Sesión activa"></span>
+              </div>
+              <span class="user-email">{{ auth.currentUser()?.email }}</span>
+              @if (auth.currentUser()?.management; as management) {
+                <div class="user-management">
+                  <span>Gerencia</span>
+                  <strong>{{ management }}</strong>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
 
-      @if (isSidebarOpen()) {
-        <button class="logout-btn notif-email-btn" disabled title="Notificaciones por correo (próximamente)">
-          <span class="logout-icon">
-            <re-icon name="mail" width="18" height="18"></re-icon>
-          </span>
-          <span class="logout-text">Notificaciones correo</span>
-        </button>
-      }
-
-      <!-- CAMBIO: isSidebarOpen → isSidebarOpen() en el binding de [title] -->
-      <button class="logout-btn" (click)="logout()" [title]="isSidebarOpen() ? '' : 'Cerrar Sesion'">
-        <span class="logout-icon">
-          <re-icon name="log-out" width="18" height="18"></re-icon>
-        </span>
-        @if (isSidebarOpen()) { <span class="logout-text">Cerrar Sesion</span> }
+      <button class="logout-btn" (click)="logout()" [title]="isSidebarOpen() ? '' : 'Cerrar sesión'">
+        <span class="logout-icon"><re-icon name="log-out" width="17" height="17"></re-icon></span>
+        @if (isSidebarOpen()) {
+          <span class="logout-text">Cerrar sesión</span>
+          <re-icon name="arrow-right" class="logout-arrow" width="14" height="14"></re-icon>
+        }
       </button>
 
       @if (isSidebarOpen()) {
         <div class="app-version">
-          <span>v{{ appVersion }}</span>
+          <span class="app-version-line"></span>
+          <span class="app-version-dept">Parque de Asís · Informática</span>
+          <span class="app-version-num">v{{ appVersion }}</span>
         </div>
       }
     </div>
   </aside>
-  <main class="main-content">
+  <main id="main-content" class="main-content" tabindex="-1">
+    <header class="mobile-topbar">
+      <button
+        type="button"
+        class="mobile-menu-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-expanded]="isSidebarOpen()"
+        aria-controls="main-navigation"
+        aria-label="Abrir menú de navegación"
+      >
+        <span class="hamburger-icon" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <img src="logos/logo-parque-asis.svg" alt="Parque de Asis">
+      <span class="mobile-user-name">{{ auth.currentUser()?.name }}</span>
+    </header>
     <router-outlet />
-    <footer class="app-footer" aria-hidden="false">
-      <div class="app-footer-inner">
-        <span class="app-footer-version">Versión v{{ appVersion }}</span>
-        <span class="app-footer-sep">·</span>
-        <span class="app-footer-author">Desarrollado por el Departamento de Informática</span>
-      </div>
-    </footer>
   </main>
 </div>

@@ -1,9 +1,11 @@
 export const environment = {
   production: false,
+  allowUnauthenticatedPreview: false,
   azureAd: {
     clientId: 'e9fd42e2-3205-443e-9ffa-dbc7068f7d42',
     authority: 'https://login.microsoftonline.com/1a55ad37-698e-43fa-b253-044422bc5439',
     redirectUri: 'http://localhost:4200',
+    apiScope: 'api://06d8b1bb-db72-4bd8-bc27-09aed508b0a9/access_as_user',
     tokenRenewalOffsetSeconds: 300,
     sessionDurationHours: 9,
   },

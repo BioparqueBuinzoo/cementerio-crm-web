@@ -100,9 +100,6 @@
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <span class="info-value">{{ cliente()!.email || '—' }}</span>
             <button class="btn-small" (click)="loadLastSent()" title="Actualizar último envío">🔄</button>
-            <button class="btn-primary" (click)="notifyCliente()" [disabled]="!canNotify || notifying" title="Notificar cliente">
-              {{ notifying ? 'Encolando…' : 'Notificar' }}
-            </button>
           </div>
           @if (lastSent()) { <div class="info-sub">Último envío: {{ lastSent() }}</div> }
         </div>
@@ -276,10 +273,23 @@
                       }
                     </div>
                     @if (puedeRenovarContrato(sep.contratos)) {
-                      <button class="btn-renovar-contrato" (click)="abrirModalContrato(sep.id)" title="Renovar por una anualidad">
-                        <re-icon name="refresh-cw" width="14" height="14"></re-icon>
-                        Renovar contrato
-                      </button>
+                      <div class="contrato-actions">
+                        <button class="btn-notificar-contrato" (click)="notifyFicha(sep, uc)"
+                          [disabled]="!cliente()?.email || notifyingSepulturaId !== null"
+                          [title]="cliente()?.email ? 'Enviar aviso de renovación por correo para esta ficha' : 'El cliente no tiene email registrado'">
+                          <re-icon name="mail" width="14" height="14"></re-icon>
+                          {{ notifyingSepulturaId === sep.id ? 'Enviando…' : 'Notificar' }}
+                        </button>
+                        <button class="btn-renovar-contrato" (click)="abrirModalContrato(sep.id)" title="Renovar por una anualidad">
+                          <re-icon name="refresh-cw" width="14" height="14"></re-icon>
+                          Renovar contrato
+                        </button>
+                      </div>
+                      @if (notifiedSepulturaId === sep.id && (notifyMessage || notifyError)) {
+                        <div class="notify-ficha-status" [class.notify-ficha-status-error]="notifyError">
+                          {{ notifyError || notifyMessage }}
+                        </div>
+                      }
                     } @else {
                       <span class="contrato-al-dia">✓ No requiere renovación</span>
                     }

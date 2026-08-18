@@ -30,6 +30,11 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
   readonly notificationType = this.route.snapshot.data['notificationType'] as NotificationType;
   readonly isExpired = this.notificationType === 'vencidas';
   readonly limit = 25;
+  readonly periodDays = 30;
+  readonly lastGlobalNotification = {
+    date: '14 ago 2026',
+    detail: '24 destinatarios · dato de ejemplo',
+  };
 
   data: VencimientoItem[] = [];
   total = 0;
@@ -42,6 +47,8 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
   notificationError = '';
   activeBatch: NotificationBatch | null = null;
 
+  totalAmount = 0;
+
   ngOnInit(): void { this.load(1); }
 
   ngOnDestroy(): void { this.clearBatchTimer(); }
@@ -52,6 +59,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
       next: res => {
         this.data = res.data;
         this.total = res.total;
+        this.totalAmount = res.totalAmount;
         this.page = res.page;
         this.totalPages = res.totalPages;
         this.loading = false;
@@ -176,6 +184,12 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
     if (!date) return '—';
     const [year, month, day] = date.split('-');
     return `${day}/${month}/${year}`;
+  }
+
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency', currency: 'CLP', maximumFractionDigits: 0,
+    }).format(value ?? 0);
   }
 
   goToClient(id: number): void { void this.router.navigate(['/asis/clientes', id]); }

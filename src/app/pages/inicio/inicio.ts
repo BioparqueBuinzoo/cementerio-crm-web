@@ -1,11 +1,11 @@
-import { Component, ChangeDetectorRef, OnInit, inject, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, inject, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DashboardStatsService, VencimientoItem } from '../../services/dashboard-stats/dashboard-stats.service';
+import { DashboardStatsService, ActividadItem, TipoActividad } from '../../services/dashboard-stats/dashboard-stats.service';
 import { ClienteService } from '../../services/cliente/cliente.service';
 import { SepulturaService } from '../../services/sepultura/sepultura.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { validate, format, clean } from 'rut.js';
-import { nextAmount } from '../../lib/renewal';
 
 interface NuevoClienteForm {
   rut: string; nombre: string; apellido1: string; apellido2: string;
@@ -17,6 +17,14 @@ const FORM_VACIO: NuevoClienteForm = {
   rut: '', nombre: '', apellido1: '', apellido2: '',
   direccion: '', comuna: '', ciudad: '',
   telefono: '', celular: '', email: '',
+};
+
+const ACTIVIDAD_ICONOS: Record<TipoActividad, string> = {
+  cliente_creado: 'user-plus',
+  sepultura_creada: 'grid',
+  mascota_creada: 'paw',
+  contrato_creado: 'file-text',
+  contrato_renovado: 'check-circle',
 };
 
 @Component({
@@ -31,6 +39,24 @@ export class Inicio implements OnInit {
   private readonly clienteService = inject(ClienteService);
   private readonly sepulturaService = inject(SepulturaService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+
+  get greeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 20) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+
+  get greetingName(): string {
+    const name = this.auth.currentUser()?.name?.trim();
+    return name?.split(/\s+/)[0] || 'equipo';
+  }
+
+  get fechaHoy(): string {
+    const formatted = new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
 
   // Modal buscar cliente por RUT
   modalBuscarVisible = false;
@@ -45,6 +71,12 @@ export class Inicio implements OnInit {
   buscarNombreError = '';
   buscarNombreResultados: { id: number; nombre: string; apellido1: string; apellido2: string; rut: string }[] = [];
   buscandoNombre = false;
+
+  // Expandir/colapsar las 3 opciones de búsqueda dentro de "Acciones rápidas"
+  buscarClienteExpandido = false;
+  toggleBuscarCliente(): void {
+    this.buscarClienteExpandido = !this.buscarClienteExpandido;
+  }
 
   abrirBuscarCliente(): void {
     this.buscarRut = '';
@@ -187,30 +219,29 @@ export class Inicio implements OnInit {
   form: NuevoClienteForm = { ...FORM_VACIO };
 
   stats = [
-    { label: 'Clientes',   value: 0, icon: 'users',    route: '/asis/clientes' },
-    { label: 'Sepulturas', value: 0, icon: 'grid',     route: '/asis/sepulturas' },
-    { label: 'Mascotas',   value: 0, icon: 'paw',      route: '/asis/mascotas' },
-    { label: 'Por vencer', value: 0, icon: 'alert',    route: '/asis/contratos-por-vencer' },
-    { label: 'Vencidas',   value: 0, icon: 'x-circle', route: '/asis/contratos-vencidos' },
+    { label: 'Clientes',          value: 0, icon: 'users',     route: '/asis/clientes' as string | null,           hint: 'Total registrados' },
+    { label: 'Sepulturas',        value: 0, icon: 'grid',      route: '/asis/sepulturas' as string | null,         hint: 'Total registradas' },
+    { label: 'Mascotas',          value: 0, icon: 'paw',       route: '/asis/mascotas' as string | null,           hint: 'Total registradas' },
+    { label: 'Contratos activos', value: 0, icon: 'file-text', route: '/asis/contratos-activos' as string | null, hint: 'Contratos vigentes' },
   ];
 
-  // Por vencer panel
-  pvData:       VencimientoItem[]  = [];
-  pvTotal       = 0;
-  pvPage        = 1;
-  pvTotalPages  = 1;
-  pvLoading     = false;
-  readonly pvLimit = 10;
+  // Estado de contratos (por vencer / vencidos)
+  pvTotal = 0;
+  vdTotal = 0;
 
-  // Vencidas panel
-  vdData:       VencimientoItem[]  = [];
-  vdTotal       = 0;
-  vdPage        = 1;
-  vdTotalPages  = 1;
-  vdLoading     = false;
-  readonly vdLimit = 10;
+  get pvPercent(): number {
+    const total = this.pvTotal + this.vdTotal;
+    return total > 0 ? Math.round((this.pvTotal / total) * 100) : 0;
+  }
 
-  exportando = { pv: false, vd: false };
+  get vdPercent(): number {
+    const total = this.pvTotal + this.vdTotal;
+    return total > 0 ? 100 - this.pvPercent : 0;
+  }
+
+  // Actividad reciente
+  readonly loadingActividad = signal(false);
+  readonly actividad = signal<ActividadItem[]>([]);
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -223,12 +254,67 @@ export class Inicio implements OnInit {
         this.stats[0].value = res.totalClientes;
         this.stats[1].value = res.totalSepulturas;
         this.stats[2].value = res.totalMascotas;
-        this.stats[3].value = res.porVencer;
+        this.stats[3].value = res.contratosActivos;
+        this.pvTotal = res.porVencer;
         this.cdr.markForCheck();
       },
     });
-    this.loadPorVencer(1);
-    this.loadVencidas(1);
+    this.loadVencidasTotal();
+    this.cargarActividad();
+  }
+
+  private loadVencidasTotal(): void {
+    this.statsService.loadVencimientos('vencidas', 1, 1).subscribe({
+      next: res => {
+        this.vdTotal = res.total;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private cargarActividad(): void {
+    this.loadingActividad.set(true);
+    this.statsService.getActividadReciente(8).subscribe({
+      next: items => {
+        this.actividad.set(items);
+        this.loadingActividad.set(false);
+      },
+      error: () => this.loadingActividad.set(false),
+    });
+  }
+
+  actividadIcono(tipo: TipoActividad): string {
+    return ACTIVIDAD_ICONOS[tipo];
+  }
+
+  actividadDescripcion(item: ActividadItem): string {
+    switch (item.tipo) {
+      case 'cliente_creado':    return `Se creó cliente #${item.refId}`;
+      case 'sepultura_creada':  return `Se creó sepultura #${item.refId}`;
+      case 'mascota_creada':    return 'Nueva mascota asociada';
+      case 'contrato_creado':   return `Se creó contrato #${item.refId}`;
+      case 'contrato_renovado': return `Contrato #${item.refId} fue renovado`;
+    }
+  }
+
+  actividadTiempo(item: ActividadItem): string {
+    const fecha = new Date(item.fecha);
+    const diffMs = Date.now() - fecha.getTime();
+    const diffDias = Math.floor(diffMs / 86_400_000);
+
+    if (item.soloFecha) {
+      if (diffDias <= 0) return 'Hoy';
+      if (diffDias === 1) return 'Ayer';
+      return `Hace ${diffDias} días`;
+    }
+
+    const diffMin = Math.floor(diffMs / 60_000);
+    if (diffMin < 1) return 'Recién';
+    if (diffMin < 60) return `Hace ${diffMin} min`;
+    if (diffDias === 0) return fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    if (diffDias === 1) return 'Ayer';
+    if (diffDias < 7) return `Hace ${diffDias} días`;
+    return fecha.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
   }
 
   abrirModal(): void {
@@ -274,84 +360,5 @@ export class Inicio implements OnInit {
     } finally {
       this.saving = false;
     }
-  }
-
-  loadPorVencer(page: number): void {
-    this.pvLoading = true;
-    this.statsService.loadVencimientos('por-vencer', page, this.pvLimit).subscribe({
-      next: res => {
-        this.pvData      = res.data;
-        this.pvTotal     = res.total;
-        this.pvPage      = res.page;
-        this.pvTotalPages = res.totalPages;
-        this.pvLoading   = false;
-        if (page === 1) this.stats[3].value = res.total;
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  loadVencidas(page: number): void {
-    this.vdLoading = true;
-    this.statsService.loadVencimientos('vencidas', page, this.vdLimit).subscribe({
-      next: res => {
-        this.vdData       = res.data;
-        this.vdTotal      = res.total;
-        this.vdPage       = res.page;
-        this.vdTotalPages = res.totalPages;
-        this.vdLoading    = false;
-        if (page === 1) this.stats[4].value = res.total;
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  /** Visible page numbers with null = ellipsis */
-  pageNums(cur: number, total: number): (number | null)[] {
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-    const pages: (number | null)[] = [1];
-    if (cur > 3) pages.push(null);
-    for (let p = Math.max(2, cur - 1); p <= Math.min(total - 1, cur + 1); p++) pages.push(p);
-    if (cur < total - 2) pages.push(null);
-    pages.push(total);
-    return pages;
-  }
-
-  exportarExcel(tipo: 'por-vencer' | 'vencidas'): void {
-    const key = tipo === 'por-vencer' ? 'pv' : 'vd';
-    this.exportando[key] = true;
-    this.statsService.exportarVencimientos(tipo).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = tipo === 'por-vencer' ? 'contratos-por-vencer.csv' : 'contratos-vencidos.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-        this.exportando[key] = false;
-        this.cdr.markForCheck();
-      },
-      error: () => { this.exportando[key] = false; this.cdr.markForCheck(); },
-    });
-  }
-
-  formatDias(dias: number): string {
-    const abs = Math.abs(dias);
-    if (abs === 0) return 'Hoy';
-    return dias > 0 ? `${abs}d` : `${abs}d atrás`;
-  }
-
-  formatCLP(value: number): string {
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(value ?? 0);
-  }
-
-  proximoPago(valor: number): string {
-    return this.formatCLP(nextAmount(valor));
-  }
-
-  formatFecha(fecha: string): string {
-    if (!fecha) return '—';
-    const [y, m, d] = fecha.split('-');
-    return `${d}/${m}/${y}`;
   }
 }

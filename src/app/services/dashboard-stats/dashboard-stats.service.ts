@@ -9,6 +9,21 @@ export interface DashboardStats {
   totalSepulturas: number;
   totalMascotas: number;
   porVencer: number;
+  contratosActivos: number;
+}
+
+export type TipoActividad =
+  | 'cliente_creado'
+  | 'sepultura_creada'
+  | 'mascota_creada'
+  | 'contrato_creado'
+  | 'contrato_renovado';
+
+export interface ActividadItem {
+  tipo: TipoActividad;
+  refId: number;
+  fecha: string;
+  soloFecha: boolean;
 }
 
 export interface VencimientoItem {
@@ -25,6 +40,7 @@ export interface VencimientoItem {
 export interface VencimientosPaginados {
   data: VencimientoItem[];
   total: number;
+  totalAmount: number;
   page: number;
   limit: number;
   totalPages: number;
@@ -52,8 +68,8 @@ export interface NotificationBatch {
   completedAt: string | null;
 }
 
-const EMPTY_STATS: DashboardStats = { totalClientes: 0, totalSepulturas: 0, totalMascotas: 0, porVencer: 0 };
-const EMPTY_PAGE: VencimientosPaginados = { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+const EMPTY_STATS: DashboardStats = { totalClientes: 0, totalSepulturas: 0, totalMascotas: 0, porVencer: 0, contratosActivos: 0 };
+const EMPTY_PAGE: VencimientosPaginados = { data: [], total: 0, totalAmount: 0, page: 1, limit: 20, totalPages: 0 };
 
 @Injectable({ providedIn: 'root' })
 export class DashboardStatsService {
@@ -73,7 +89,7 @@ export class DashboardStatsService {
     );
   }
 
-  loadVencimientos(tipo: 'por-vencer' | 'vencidas', page: number, limit: number): Observable<VencimientosPaginados> {
+  loadVencimientos(tipo: 'por-vencer' | 'vencidas' | 'activos', page: number, limit: number): Observable<VencimientosPaginados> {
     this.loadingVencimientos.set(true);
     return this.http.get<VencimientosPaginados>(
       `${this.url}/vencimientos?tipo=${tipo}&page=${page}&limit=${limit}`
@@ -118,17 +134,38 @@ export class DashboardStatsService {
     );
   }
 
-  notifyClient(clienteId: number, tipo: NotificationType) {
-    return this.http.post<NotificationBatch>(`${this.url}/vencimientos/notificaciones/cliente/${clienteId}`, { notificationType: tipo });
-  }
-
   getNotificationBatch(id: string): Observable<NotificationBatch> {
     return this.http.get<NotificationBatch>(
       `${this.url}/vencimientos/notificaciones/lotes/${encodeURIComponent(id)}`,
     );
   }
 
-  exportarVencimientos(tipo: 'por-vencer' | 'vencidas'): Observable<Blob> {
+  getNotificationPreview(): Observable<{ subject: string; html: string }> {
+    return this.http.get<{ subject: string; html: string }>(
+      `${this.url}/vencimientos/notificaciones/vista-previa`,
+    );
+  }
+
+  getLatestMassBatch(): Observable<NotificationBatch | null> {
+    return this.http.get<NotificationBatch | null>(
+      `${this.url}/vencimientos/notificaciones/lotes/masivo/ultimo`,
+    );
+  }
+
+  sendTestEmail(to: string): Observable<{ messageId: string; to: string }> {
+    return this.http.post<{ messageId: string; to: string }>(
+      `${this.url}/vencimientos/notificaciones/prueba`,
+      { to },
+    );
+  }
+
+  getActividadReciente(limit = 10): Observable<ActividadItem[]> {
+    return this.http.get<ActividadItem[]>(`${this.url}/actividad-reciente?limit=${limit}`).pipe(
+      catchError(() => of([])),
+    );
+  }
+
+  exportarVencimientos(tipo: 'por-vencer' | 'vencidas' | 'activos'): Observable<Blob> {
     return this.http.get(
       `${this.url}/vencimientos/export?tipo=${tipo}`,
       { responseType: 'blob' }

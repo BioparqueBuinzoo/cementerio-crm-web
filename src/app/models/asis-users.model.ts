@@ -1,8 +1,16 @@
+export type AppAccessStatus = 'pending' | 'active' | 'disabled';
+
 export interface AsisUser {
-  id: string;
+  id: number;
   email: string;
   name: string | null;
   roles: string[];
-  is_active: boolean;
-  created_at: string;
+  app_status: AppAccessStatus;
+  last_login_at: string | null;
+}
+
+export interface AsisRole {
+  code: string;
+  name: string;
+  description: string;
 }

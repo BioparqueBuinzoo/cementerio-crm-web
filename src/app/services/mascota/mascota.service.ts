@@ -23,13 +23,18 @@ export class MascotaService {
   readonly page = this._page.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
 
-  async getAll(page: number = 1, limit: number = 20, idSepultura?: number, nombre?: string): Promise<void> {
+  async getAll(
+    page: number = 1, limit: number = 20, idSepultura?: number, nombre?: string, especie?: string, sexo?: string, estado?: string
+  ): Promise<void> {
     try {
       this._loading.set(true);
       this._error.set(null);
       let url = `${this.baseUrl}?page=${page}&limit=${limit}`;
       if (idSepultura != null) url += `&idSepultura=${idSepultura}`;
       if (nombre) url += `&nombre=${encodeURIComponent(nombre)}`;
+      if (especie) url += `&especie=${encodeURIComponent(especie)}`;
+      if (sexo) url += `&sexo=${encodeURIComponent(sexo)}`;
+      if (estado) url += `&estado=${encodeURIComponent(estado)}`;
       const response = await firstValueFrom(
         this.http.get<MascotaPaginatedResult>(url),
       );

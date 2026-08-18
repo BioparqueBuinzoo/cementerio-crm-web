@@ -57,11 +57,179 @@
   font-weight: 700;
   cursor: pointer;
 }
-.btn-notify-one:hover:not(:disabled) { background: var(--color-primary-dark, #2d6a4f); color: #fff; }
+.btn-notify-one:hover:not(:disabled) { background: #dcefe0; border-color: var(--color-primary-dark, #2d6a4f); }
 .btn-notify-one:disabled { opacity: 0.55; cursor: not-allowed; }
 
 @media (max-width: 720px) {
   .page-header { flex-wrap: wrap; }
   .btn-notify-all { width: 100%; justify-content: center; }
   .notification-status { align-items: flex-start; flex-direction: column; gap: 5px; }
+}
+
+/* ── Vencimientos: dashboard operativo ────────────────── */
+.vencimientos-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.vencimientos-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.toolbar-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.toolbar-title h1 {
+  margin: 2px 0 2px;
+  color: var(--color-primary-deeper, #075b32);
+  font-family: var(--font-display, 'Montserrat', sans-serif);
+  font-size: 1.45rem;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+}
+.toolbar-title p { margin: 0; color: var(--color-text-muted, #6b7d70); font-size: 12px; }
+.eyebrow {
+  color: var(--color-primary-dark, #2a7d2e);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+.toolbar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border, #d9e4db);
+  border-radius: 10px;
+  color: var(--color-primary-deeper, #075b32);
+  background: #fff;
+  box-shadow: var(--shadow-xs);
+  text-decoration: none;
+}
+.toolbar-back:hover { background: #eaf5ec; border-color: #b9d8bf; }
+
+.vencimientos-page .btn-notify-all {
+  margin: 0;
+  min-height: 38px;
+  border: 1px solid #b9d8bf;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-primary-dark, #2a7d2e);
+  box-shadow: var(--shadow-xs);
+}
+.vencimientos-page .btn-notify-all:hover:not(:disabled) { background: #eaf5ec; }
+
+.venc-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  flex-shrink: 0;
+}
+.overview-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  min-height: 104px;
+  padding: 17px 18px;
+  border: 1px solid var(--color-border, #d9e4db);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.overview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  color: var(--color-primary-dark, #2a7d2e);
+  background: #eaf5ec;
+}
+.overview-card-amount .overview-icon { color: #2563a6; background: #eaf2fb; }
+.overview-card-notification .overview-icon { color: #a16207; background: #fff5d9; }
+.overview-copy { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.overview-label { color: var(--color-text-muted, #6b7d70); font-size: 11px; font-weight: 600; }
+.overview-copy strong {
+  color: var(--color-text, #111b14);
+  font-size: 1.4rem;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.overview-card-notification .overview-copy strong { font-size: 1rem; letter-spacing: -.01em; }
+.overview-copy small { color: var(--color-text-muted, #6b7d70); font-size: 10.5px; }
+
+.period-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px 0;
+  border-top: 1px solid #dce9df;
+  border-radius: 0;
+  background: transparent;
+  flex-shrink: 0;
+}
+.period-copy { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.period-icon { display: inline-flex; color: var(--color-primary-dark, #2a7d2e); }
+.period-copy div { display: grid; gap: 1px; min-width: 0; }
+.period-copy strong { color: var(--color-text-2, #374940); font-size: 12px; }
+.period-copy span:not(.period-icon) { color: var(--color-text-muted, #6b7d70); font-size: 11px; }
+.period-status { display: inline-flex; align-items: center; gap: 6px; color: #4f6f57; font-size: 11px; white-space: nowrap; }
+.period-status span { width: 7px; height: 7px; border-radius: 50%; background: #3aa956; box-shadow: 0 0 0 3px #dff1e2; }
+
+.vencimientos-table-card { min-height: 300px; }
+.vencimientos-table-card .data-table { font-size: 12.5px; }
+.vencimientos-table-card .data-table th { padding: 10px 13px; }
+.vencimientos-table-card .data-table td { padding: 11px 13px; }
+.vencimientos-table-card .col-amount { color: var(--color-text-2, #374940); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.vencimientos-table-card .col-nombre { max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vencimientos-table-card .col-notification { width: 170px; white-space: nowrap; }
+.vencimientos-table-card .btn-notify-one { border-color: #b9d8bf; background: #f1f8f2; color: var(--color-primary-dark, #2a7d2e); }
+.vencimientos-table-card .btn-notify-one:hover:not(:disabled) { background: #dcefe0; }
+.vencimientos-table-card .empty-row {
+  height: 270px;
+  color: var(--color-text-muted, #6b7d70);
+  font-style: normal;
+}
+.vencimientos-table-card .empty-row re-icon,
+.vencimientos-table-card .empty-row strong,
+.vencimientos-table-card .empty-row span { display: block; margin: 0 auto 8px; }
+.vencimientos-table-card .empty-row re-icon { color: #84a58d; }
+.vencimientos-table-card .empty-row strong { color: var(--color-text-2, #374940); font-size: 14px; }
+.vencimientos-table-card .empty-row span { font-size: 12px; }
+
+@media (max-width: 1000px) {
+  .venc-overview { grid-template-columns: 1fr 1fr; }
+  .overview-card-notification { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .vencimientos-page { padding: 14px; gap: 12px; }
+  .vencimientos-toolbar { align-items: flex-start; }
+  .vencimientos-toolbar .btn-notify-all { align-self: center; padding: 0 11px; }
+  .vencimientos-toolbar .btn-notify-all .re-icon { display: none; }
+  .venc-overview { grid-template-columns: 1fr; }
+  .overview-card-notification { grid-column: auto; }
+  .period-strip { align-items: flex-start; flex-direction: column; }
+  .period-status { padding-left: 25px; }
+  .vencimientos-table-card { min-width: 0; }
+  .vencimientos-table-card .table-scroll { overflow-x: auto; }
+  .vencimientos-table-card .data-table { min-width: 880px; }
 }

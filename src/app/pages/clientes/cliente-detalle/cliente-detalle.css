@@ -388,6 +388,14 @@
   color: #fff; background: #991b1b; font-size: 10px; font-weight: 800;
   text-transform: uppercase; letter-spacing: .04em;
 }
+.contrato-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
 .btn-renovar-contrato {
   align-self: center;
   display: inline-flex;
@@ -410,6 +418,51 @@
   background: #dcfce7;
   border-color: #22c55e;
   transform: translateY(-1px);
+}
+
+.btn-notificar-contrato {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  color: #1e40af;
+  background: #eff6ff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.btn-notificar-contrato:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+.btn-notificar-contrato:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+.notify-ficha-status {
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 10px;
+  border: 1px solid #93c5fd;
+  border-radius: 7px;
+  color: #1e40af;
+  background: #eff6ff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.notify-ficha-status-error {
+  border-color: #fecaca;
+  color: #991b1b;
+  background: #fef2f2;
 }
 .contrato-al-dia {
   align-self: center;
@@ -580,7 +633,7 @@
 
 @media (max-width: 900px) {
   .contrato-resumen-header { grid-template-columns: 1fr 1fr; }
-  .btn-renovar-contrato,
+  .contrato-actions,
   .contrato-al-dia { justify-self: end; }
   .contrato-actual-campos { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
 }
@@ -589,8 +642,9 @@
   .info-grid { grid-template-columns: 1fr; }
   .contrato-resumen-header,
   .renovacion-policy { grid-template-columns: 1fr; }
-  .btn-renovar-contrato,
+  .contrato-actions,
   .contrato-al-dia { justify-self: start; }
+  .contrato-actions { flex-wrap: wrap; }
   .contrato-actual-campos { grid-template-columns: 1fr; }
 }
 

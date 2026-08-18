@@ -35,7 +35,7 @@ export class AuthService {
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
 
   readonly isAdmin = computed(() =>
-    this._currentUser()?.roles?.includes('Admin') ?? false
+    this.hasRole('admin')
   );
   readonly userRoles = computed(() => this._currentUser()?.roles ?? []);
 
@@ -63,12 +63,34 @@ export class AuthService {
       this._loading.set(true);
       this._error.set(null);
 
+      if (environment.allowUnauthenticatedPreview) {
+        this._currentUser.set({
+          id: 'visual-preview',
+          email: 'preview@parquedeasis.cl',
+          name: 'Vista de diseño',
+          pictureUrl: null,
+          management: 'Parque de Asís',
+          roles: ['admin'],
+          views: [],
+          appStatus: 'active',
+        });
+        return;
+      }
+
       await this.ensureMsalInitialized();
 
       const response = await this.msalInstance.handleRedirectPromise();
 
-      if (response?.idToken) {
-        await this._loginWithBackend(response.idToken);
+      if (response) {
+        const account = response.account ?? this.msalInstance.getAllAccounts()[0];
+        const accessToken = response.accessToken || (account
+          ? (await this.msalInstance.acquireTokenSilent({
+              account,
+              scopes: [environment.azureAd.apiScope],
+            })).accessToken
+          : '');
+        if (!accessToken) throw new Error('Microsoft no devolvió un token de acceso válido');
+        await this._loginWithBackend(accessToken);
       } else {
         await this.loadUserInfo();
       }
@@ -84,10 +106,10 @@ export class AuthService {
       this._loading.set(false);
     }
   }
-  private async _loginWithBackend(idToken: string): Promise<void> {
+  private async _loginWithBackend(accessToken: string): Promise<void> {
     const response = await firstValueFrom(
       this.http.post<LoginResponse>(`${environment.apiUrl}/api/auth/login`, {
-        idToken,
+        accessToken,
       })
     );
     this._currentUser.set(response.data);
@@ -116,7 +138,7 @@ export class AuthService {
 
     sessionStorage.setItem(this.returnUrlKey, returnUrl);
     await this.msalInstance.loginRedirect({
-      scopes: ['openid', 'profile', 'email'],
+      scopes: [environment.azureAd.apiScope],
       prompt: 'select_account',
     });
   }
@@ -136,13 +158,13 @@ export class AuthService {
       console.error('Error en logout del backend:', error);
     }
 
-    // Limpiamos el estado local inmediatamente.
+    // Solo cerramos la sesión local (cookie del backend + caché de MSAL en
+    // este navegador). No usamos logoutRedirect(): eso cierra también la
+    // sesión de Microsoft, afectando otras apps/pestañas con la misma cuenta.
+    await this.msalInstance.clearCache();
     this._currentUser.set(null);
 
-    // Redirigimos a Microsoft para cerrar también la sesión SSO de Azure AD.
-    // Si no querés cerrar la sesión de Microsoft (solo la tuya), usá
-    // this.msalInstance.clearCache() en su lugar.
-    await this.msalInstance.logoutRedirect();
+    await this.router.navigateByUrl('/login');
   }
 
   // ── Helpers de roles ──────────────────────────────────────────────────────
@@ -152,12 +174,13 @@ export class AuthService {
   // Internamente leen el signal, así que siguen siendo reactivos en effects/computed externos.
 
   hasRole(role: string): boolean {
-    return this._currentUser()?.roles?.includes(role) ?? false;
+    const expected = role.toLowerCase();
+    return this._currentUser()?.roles?.some((current) => current.toLowerCase() === expected) ?? false;
   }
 
   hasAnyRole(roles: string[]): boolean {
-    const userRoles = this._currentUser()?.roles;
+    const userRoles = this._currentUser()?.roles?.map((role) => role.toLowerCase());
     if (!userRoles) return false;
-    return roles.some(role => userRoles.includes(role));
+    return roles.some(role => userRoles.includes(role.toLowerCase()));
   }
 }

@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 // URLs que no deben disparar redirección a /login si reciben 401.
 // - /api/auth/login: el 401 significa credenciales inválidas, no sesión expirada.
@@ -25,7 +26,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         req.url.includes(url)
       );
 
-      if (is401 && !isExcluded) {
+      if (is401 && !isExcluded && !environment.allowUnauthenticatedPreview) {
         // La sesión expiró o la cookie es inválida.
         // Redirigimos a login para que el usuario se autentique nuevamente.
         router.navigate(['/login'], {

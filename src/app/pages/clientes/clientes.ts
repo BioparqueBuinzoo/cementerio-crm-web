@@ -27,6 +27,9 @@ export class Clientes implements OnInit {
 
   readonly showCreateForm = signal<boolean>(false);
   readonly buscarInput    = signal('');
+  readonly filtersOpen    = signal(true);
+  readonly emailEstado    = signal('todos');
+  readonly comunaFilter   = signal('');
   exportando = false;
 
   readonly displayedClientes = computed(() =>
@@ -66,16 +69,26 @@ export class Clientes implements OnInit {
 
   buscar(): void {
     const v = this.buscarInput().trim();
-    if (!v) { this.clienteService.getAllClientes(); return; }
+    if (!v) { this.loadFiltered(1); return; }
     const esRut = /^[\d.\-kK]+$/.test(v);
     esRut
-      ? this.clienteService.getAllClientes(1, 20, v)
-      : this.clienteService.getAllClientes(1, 20, undefined, v);
+      ? this.loadFiltered(1, v)
+      : this.loadFiltered(1, undefined, v);
   }
 
   limpiar(): void {
     this.buscarInput.set('');
-    this.clienteService.getAllClientes();
+    this.loadFiltered(1);
+  }
+
+  toggleFilters(): void { this.filtersOpen.update(open => !open); }
+
+  applyFilters(): void { this.loadFiltered(1); }
+
+  clearFilters(): void {
+    this.emailEstado.set('todos');
+    this.comunaFilter.set('');
+    this.loadFiltered(1);
   }
 
   onKeydown(e: KeyboardEvent): void {
@@ -89,11 +102,20 @@ export class Clientes implements OnInit {
   changePage(newPage: number): void {
     if (newPage < 1 || newPage > this.totalPages()) return;
     this.scrollContentToTop();
-    this.clienteService.getAllClientes(newPage);
+    this.loadFiltered(newPage);
   }
 
   retry(): void {
-    this.clienteService.getAllClientes(this.page());
+    this.loadFiltered(this.page());
+  }
+
+  private loadFiltered(page: number, rut?: string, nombre?: string): void {
+    const value = this.buscarInput().trim();
+    const searchRut = rut ?? (value && /^[\d.\-kK]+$/.test(value) ? value : undefined);
+    const searchName = nombre ?? (value && !searchRut ? value : undefined);
+    void this.clienteService.getAllClientes(
+      page, 20, searchRut, searchName, this.emailEstado(), this.comunaFilter().trim()
+    );
   }
 
   irAFicha(id: number): void {

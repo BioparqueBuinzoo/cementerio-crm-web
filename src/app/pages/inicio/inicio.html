@@ -1,19 +1,24 @@
 <div class="inicio-container">
 
-  <!-- ── Header ─────────────────────────────────────────── -->
-  <header class="inicio-header">
-    <div class="header-brand">
-      <div class="brand-logo-wrap">
-        <img class="brand-logo" src="logos/logo-parque-asis.svg" alt="Parque de Asis" width="56" height="56" loading="eager">
-      </div>
-      <div class="brand-text">
-        <h1 class="brand-title">Parque de Asis</h1>
-        <p class="brand-subtitle">Sistema de Gestión — Cementerio de Mascotas</p>
+  <!-- ── Bienvenida ─────────────────────────────────────── -->
+  <section class="welcome-banner" aria-label="Saludo de bienvenida">
+    <div class="welcome-left">
+      <div class="welcome-copy">
+        <span class="welcome-eyebrow">PARQUE DE ASÍS</span>
+        <h1>{{ greeting }}, {{ greetingName }}</h1>
+        <div class="welcome-date">
+          <re-icon name="calendar" width="13" height="13"></re-icon>
+          {{ fechaHoy }}
+        </div>
       </div>
     </div>
-  </header>
+    <button class="btn-crear-cliente" (click)="abrirModal()">
+      <re-icon name="plus" width="16" height="16"></re-icon>
+      Crear cliente
+    </button>
+  </section>
 
-  <!-- ── Stats ──────────────────────────────────────────── -->
+  <!-- ── Resumen general ──────────────────────────────────── -->
   <div class="stats-grid">
     @if (statsService.loading()) {
       @for (stat of stats; track stat.label) {
@@ -34,252 +39,157 @@
           <div class="stat-info">
             <span class="stat-value">{{ stat.value }}</span>
             <span class="stat-label">{{ stat.label }}</span>
+            <span class="stat-hint">{{ stat.hint }}</span>
           </div>
         </a>
       }
     }
   </div>
 
-  <!-- ── Accesos rápidos ────────────────────────────────── -->
-  <div class="section-block">
-    <div class="section-header">
-      <re-icon name="zap" width="15" height="15"></re-icon>
-      Accesos rápidos
-    </div>
-    <div class="shortcuts-grid">
+  <!-- ── Estado de contratos + Acciones rápidas ───────────── -->
+  <div class="dashboard-row">
 
-      <button (click)="abrirModal()" class="shortcut-card">
-        <div class="shortcut-icon">
-          <re-icon name="user-plus" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">Crear cliente</span>
-          <span class="shortcut-desc">Registrar un nuevo cliente</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
+    <section class="panel-card panel-contratos">
+      <div class="panel-header">
+        <re-icon name="file-text" width="16" height="16"></re-icon>
+        <h2>Estado de contratos</h2>
+      </div>
 
-      <button (click)="abrirBuscarNombre()" class="shortcut-card">
-        <div class="shortcut-icon">
-          <re-icon name="user-minus" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">Buscar por nombre</span>
-          <span class="shortcut-desc">Buscar por nombre y apellidos</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
-
-      <button (click)="abrirBuscarFicha()" class="shortcut-card">
-        <div class="shortcut-icon">
-          <re-icon name="file-text" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">Buscar por ficha</span>
-          <span class="shortcut-desc">Buscar sepultura por N° de ficha</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
-
-      <button (click)="abrirBuscarCliente()" class="shortcut-card">
-        <div class="shortcut-icon">
-          <re-icon name="search" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">Buscar cliente</span>
-          <span class="shortcut-desc">Buscar por RUT</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
-
-      <button (click)="exportarExcel('por-vencer')" class="shortcut-card"
-        [disabled]="exportando.pv || pvTotal === 0">
-        <div class="shortcut-icon shortcut-icon-warning">
-          <re-icon name="download" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">{{ exportando.pv ? 'Descargando…' : 'Exportar por vencer' }}</span>
-          <span class="shortcut-desc">Contratos próximos 90 días</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
-
-      <button (click)="exportarExcel('vencidas')" class="shortcut-card"
-        [disabled]="exportando.vd || vdTotal === 0">
-        <div class="shortcut-icon shortcut-icon-danger">
-          <re-icon name="download" width="18" height="18"></re-icon>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-label">{{ exportando.vd ? 'Descargando…' : 'Exportar vencidos' }}</span>
-          <span class="shortcut-desc">Contratos vencidos</span>
-        </div>
-        <re-icon name="arrow-right" class="shortcut-arrow" width="24" height="24"></re-icon>
-      </button>
-
-    </div>
-  </div>
-
-  <!-- ── Vencimientos ───────────────────────────────────── -->
-  <div class="section-block">
-    <div class="section-header">
-      <re-icon name="clock" width="15" height="15"></re-icon>
-      Vencimientos de contratos
-    </div>
-
-    <div class="venc-grid">
-
-      <!-- Por vencer -->
-      <div class="venc-panel venc-panel-warning">
-        <div class="venc-panel-header">
-          <a routerLink="/asis/contratos-por-vencer" class="venc-panel-header-link">
-            <div class="venc-panel-title">
-              <re-icon name="clock" width="14" height="14"></re-icon>
-              Por vencer
-              <span class="venc-count">{{ pvTotal }}</span>
-            </div>
-            <div class="venc-header-right">
-              <span class="venc-subtitle">Próximos 90 días</span>
-              <re-icon name="arrow-right" class="venc-goto" width="13" height="13"></re-icon>
-            </div>
-          </a>
-        </div>
-
-        @if (pvLoading) {
-          <div class="venc-loading"><div class="venc-spinner"></div>Cargando...</div>
-        } @else if (pvData.length === 0) {
-          <div class="venc-empty">
-            <re-icon name="check-circle" width="32" height="32"></re-icon>
-            <span>Sin contratos por vencer</span>
+      <div class="contratos-chips">
+        <a routerLink="/asis/contratos-por-vencer" class="contrato-chip contrato-chip-warning">
+          <div class="chip-icon"><re-icon name="clock" width="20" height="20"></re-icon></div>
+          <div class="chip-info">
+            <span class="chip-value">{{ pvTotal }}</span>
+            <span class="chip-label">Por vencer</span>
+            <span class="chip-sub">Próximos 30 días</span>
           </div>
-        } @else {
-          <div class="venc-table-wrap">
-            <table class="venc-table">
-              <thead>
-                <tr>
-                  <th>Ficha</th><th>Tipo</th><th>Cliente</th><th>Vence</th><th>Días</th><th>Último pago</th><th>Próximo pago</th><th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of pvData; track item.id_sepultura) {
-                  <tr>
-                    <td class="venc-ficha">#{{ item.numero_ficha }}</td>
-                    <td class="venc-tipo">{{ item.tipo }}</td>
-                    <td class="venc-cliente">{{ item.nombre_cliente }}</td>
-                    <td class="venc-fecha">{{ formatFecha(item.fecha_vencimiento) }}</td>
-                    <td><span class="dias-badge dias-warning">{{ formatDias(item.dias_restantes) }}</span></td>
-                    <td class="venc-monto">{{ formatCLP(item.valor_renovacion) }}</td>
-                    <td class="venc-monto venc-proximo">{{ proximoPago(item.valor_renovacion) }}</td>
-                    <td class="venc-action">
-                      <a [routerLink]="['/asis/clientes', item.id_cliente]" class="venc-btn" title="Ver ficha">
-                        <re-icon name="log-out" width="13" height="13"></re-icon>
-                      </a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+        </a>
+        <a routerLink="/asis/contratos-vencidos" class="contrato-chip contrato-chip-danger">
+          <div class="chip-icon"><re-icon name="alert" width="20" height="20"></re-icon></div>
+          <div class="chip-info">
+            <span class="chip-value">{{ vdTotal }}</span>
+            <span class="chip-label">Vencidos</span>
+            <span class="chip-sub">Requieren renovación</span>
           </div>
-          @if (pvTotalPages > 1) {
-            <div class="venc-pagination">
-              <button class="venc-pag-btn" (click)="loadPorVencer(pvPage - 1)" [disabled]="pvPage === 1">
-                <re-icon name="chevron-left-solid" width="12" height="12"></re-icon>
-              </button>
-              @for (p of pageNums(pvPage, pvTotalPages); track $index) {
-                @if (p === null) { <span class="venc-pag-ellipsis">…</span> }
-                @else { <button class="venc-pag-btn venc-pag-num" [class.venc-pag-active]="p === pvPage" (click)="loadPorVencer(p)">{{ p }}</button> }
-              }
-              <button class="venc-pag-btn" (click)="loadPorVencer(pvPage + 1)" [disabled]="pvPage === pvTotalPages">
-                <re-icon name="chevron-right-solid" width="12" height="12"></re-icon>
-              </button>
-            </div>
+        </a>
+      </div>
+
+      <div class="distribucion">
+        <span class="distribucion-label">Distribución de contratos</span>
+        <div class="distribucion-bar">
+          @if (pvPercent > 0) {
+            <div class="distribucion-seg distribucion-seg-warning" [style.width.%]="pvPercent">{{ pvTotal }} ({{ pvPercent }}%)</div>
           }
-        }
-        <div class="venc-panel-footer">
-          <button class="venc-export-btn" (click)="exportarExcel('por-vencer')"
-            [disabled]="exportando.pv || pvTotal === 0" title="Exportar a Excel">
-            <re-icon name="download" width="13" height="13"></re-icon>
-            {{ exportando.pv ? 'Descargando…' : 'Exportar Excel' }}
-          </button>
+          @if (vdPercent > 0) {
+            <div class="distribucion-seg distribucion-seg-danger" [style.width.%]="vdPercent">{{ vdTotal }} ({{ vdPercent }}%)</div>
+          }
+        </div>
+        <div class="distribucion-legend">
+          <span><i class="dist-dot dist-dot-warning"></i>Por vencer</span>
+          <span><i class="dist-dot dist-dot-danger"></i>Vencidos</span>
         </div>
       </div>
 
-      <!-- Vencidas -->
-      <div class="venc-panel venc-panel-danger">
-        <div class="venc-panel-header">
-          <a routerLink="/asis/contratos-vencidos" class="venc-panel-header-link">
-            <div class="venc-panel-title">
-              <re-icon name="alert" width="14" height="14"></re-icon>
-              Vencidas
-              <span class="venc-count venc-count-danger">{{ vdTotal }}</span>
-            </div>
-            <div class="venc-header-right">
-              <span class="venc-subtitle">Requieren renovación</span>
-              <re-icon name="arrow-right" class="venc-goto" width="13" height="13"></re-icon>
-            </div>
-          </a>
-        </div>
+      <a routerLink="/asis/contratos-por-vencer" class="panel-footer-link">
+        Ver contratos <re-icon name="arrow-right" width="13" height="13"></re-icon>
+      </a>
+    </section>
 
-        @if (vdLoading) {
-          <div class="venc-loading"><div class="venc-spinner"></div>Cargando...</div>
-        } @else if (vdData.length === 0) {
-          <div class="venc-empty">
-            <re-icon name="check-circle" width="32" height="32"></re-icon>
-            <span>Sin contratos vencidos</span>
-          </div>
-        } @else {
-          <div class="venc-table-wrap">
-            <table class="venc-table">
-              <thead>
-                <tr>
-                  <th>Ficha</th><th>Tipo</th><th>Cliente</th><th>Venció</th><th>Atraso</th><th>Último pago</th><th>Próximo pago</th><th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of vdData; track item.id_sepultura) {
-                  <tr>
-                    <td class="venc-ficha">#{{ item.numero_ficha }}</td>
-                    <td class="venc-tipo">{{ item.tipo }}</td>
-                    <td class="venc-cliente">{{ item.nombre_cliente }}</td>
-                    <td class="venc-fecha">{{ formatFecha(item.fecha_vencimiento) }}</td>
-                    <td><span class="dias-badge dias-danger">{{ formatDias(item.dias_restantes) }}</span></td>
-                    <td class="venc-monto">{{ formatCLP(item.valor_renovacion) }}</td>
-                    <td class="venc-monto venc-proximo">{{ proximoPago(item.valor_renovacion) }}</td>
-                    <td class="venc-action">
-                      <a [routerLink]="['/asis/clientes', item.id_cliente]" class="venc-btn venc-btn-danger" title="Ver ficha">
-                        <re-icon name="log-out" width="13" height="13"></re-icon>
-                      </a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          @if (vdTotalPages > 1) {
-            <div class="venc-pagination">
-              <button class="venc-pag-btn" (click)="loadVencidas(vdPage - 1)" [disabled]="vdPage === 1">
-                <re-icon name="chevron-left-solid" width="12" height="12"></re-icon>
-              </button>
-              @for (p of pageNums(vdPage, vdTotalPages); track $index) {
-                @if (p === null) { <span class="venc-pag-ellipsis">…</span> }
-                @else { <button class="venc-pag-btn venc-pag-num" [class.venc-pag-active]="p === vdPage" (click)="loadVencidas(p)">{{ p }}</button> }
-              }
-              <button class="venc-pag-btn" (click)="loadVencidas(vdPage + 1)" [disabled]="vdPage === vdTotalPages">
-                <re-icon name="chevron-right-solid" width="12" height="12"></re-icon>
-              </button>
-            </div>
-          }
-        }
-        <div class="venc-panel-footer">
-          <button class="venc-export-btn venc-export-btn-danger" (click)="exportarExcel('vencidas')"
-            [disabled]="exportando.vd || vdTotal === 0" title="Exportar a Excel">
-            <re-icon name="download" width="13" height="13"></re-icon>
-            {{ exportando.vd ? 'Descargando…' : 'Exportar Excel' }}
-          </button>
-        </div>
+    <section class="panel-card panel-acciones">
+      <div class="panel-header">
+        <re-icon name="zap" width="16" height="16"></re-icon>
+        <h2>Acciones rápidas</h2>
       </div>
 
-    </div>
+      <div class="acciones-list">
+        <button class="accion-item" (click)="abrirModal()">
+          <div class="accion-icon accion-icon-primary"><re-icon name="user-plus" width="18" height="18"></re-icon></div>
+          <div class="accion-text">
+            <strong>Crear cliente</strong>
+            <span>Registrar un nuevo cliente</span>
+          </div>
+          <re-icon name="arrow-right" class="accion-arrow" width="16" height="16"></re-icon>
+        </button>
+
+        <button class="accion-item accion-item-search" [class.accion-item-active]="buscarClienteExpandido" (click)="toggleBuscarCliente()">
+          <div class="accion-icon"><re-icon name="search" width="18" height="18"></re-icon></div>
+          <div class="accion-text">
+            <strong>Buscar cliente</strong>
+            <span>Por nombre, ficha o RUT</span>
+          </div>
+          <re-icon name="chevron-down" class="accion-arrow" [class.accion-arrow-open]="buscarClienteExpandido" width="16" height="16"></re-icon>
+        </button>
+        @if (buscarClienteExpandido) {
+          <div class="accion-sub-options">
+            <button (click)="abrirBuscarNombre()" class="qa-search-btn">
+              <re-icon name="user-search" width="16" height="16"></re-icon>
+              <span>Por nombre</span>
+            </button>
+            <button (click)="abrirBuscarFicha()" class="qa-search-btn">
+              <re-icon name="file-text" width="16" height="16"></re-icon>
+              <span>Por N° ficha</span>
+            </button>
+            <button (click)="abrirBuscarCliente()" class="qa-search-btn">
+              <re-icon name="search" width="16" height="16"></re-icon>
+              <span>Por RUT</span>
+            </button>
+          </div>
+        }
+
+        <a routerLink="/asis/mascotas" class="accion-item">
+          <div class="accion-icon"><re-icon name="paw" width="18" height="18"></re-icon></div>
+          <div class="accion-text">
+            <strong>Registrar mascota</strong>
+            <span>Agregar nueva mascota</span>
+          </div>
+          <re-icon name="arrow-right" class="accion-arrow" width="16" height="16"></re-icon>
+        </a>
+
+        <a routerLink="/asis/sepulturas" class="accion-item">
+          <div class="accion-icon"><re-icon name="grid" width="18" height="18"></re-icon></div>
+          <div class="accion-text">
+            <strong>Crear sepultura</strong>
+            <span>Registrar nueva sepultura</span>
+          </div>
+          <re-icon name="arrow-right" class="accion-arrow" width="16" height="16"></re-icon>
+        </a>
+      </div>
+    </section>
+
   </div>
+
+  <!-- ── Actividad reciente ────────────────────────────────── -->
+  <section class="panel-card panel-actividad">
+    <div class="panel-header">
+      <re-icon name="history" width="16" height="16"></re-icon>
+      <h2>Actividad reciente</h2>
+    </div>
+
+    @if (loadingActividad()) {
+      <div class="actividad-list">
+        @for (i of [0,1,2,3]; track i) {
+          <div class="actividad-item">
+            <div class="actividad-icon-skeleton"></div>
+            <span class="actividad-desc-skeleton"></span>
+          </div>
+        }
+      </div>
+    } @else if (actividad().length === 0) {
+      <p class="panel-muted">Sin actividad reciente.</p>
+    } @else {
+      <div class="actividad-list">
+        @for (item of actividad(); track item.tipo + item.refId + item.fecha) {
+          <div class="actividad-item">
+            <div class="actividad-icon">
+              <re-icon [attr.name]="actividadIcono(item.tipo)" width="15" height="15"></re-icon>
+            </div>
+            <span class="actividad-desc">{{ actividadDescripcion(item) }}</span>
+            <span class="actividad-time">{{ actividadTiempo(item) }}</span>
+          </div>
+        }
+      </div>
+    }
+  </section>
 
 
   <!-- ── Modal Buscar por Ficha ───────────────────────── -->

@@ -24,12 +24,16 @@ export class ClienteService {
   readonly page = this._page.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
 
-  async getAllClientes(page: number = 1, limit: number = 20, rut?: string, nombre?: string): Promise<void> {
+  async getAllClientes(
+    page: number = 1, limit: number = 20, rut?: string, nombre?: string, emailEstado?: string, comuna?: string
+  ): Promise<void> {
     try {
       this._loading.set(true);
       let url = `${this.baseUrl}?page=${page}&limit=${limit}`;
       if (rut)    url += `&rut=${encodeURIComponent(rut)}`;
       if (nombre) url += `&nombre=${encodeURIComponent(nombre)}`;
+      if (emailEstado && emailEstado !== 'todos') url += `&emailEstado=${encodeURIComponent(emailEstado)}`;
+      if (comuna) url += `&comuna=${encodeURIComponent(comuna)}`;
       const response = await firstValueFrom(
         this.http.get<PaginatedResult<Cliente>>(url),
       );

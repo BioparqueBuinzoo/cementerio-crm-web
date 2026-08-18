@@ -1,6 +1,7 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ClienteService } from '../../../services/cliente/cliente.service';
@@ -524,7 +525,7 @@ export class ClienteDetalle {
   estadoContrato(fechaVencimiento: string): 'vigente' | 'por-vencer' | 'vencido' {
     const dias = this.diasHastaVencimiento(fechaVencimiento);
     if (dias < 0) return 'vencido';
-    if (dias <= 90) return 'por-vencer';
+    if (dias <= 30) return 'por-vencer';
     return 'vigente';
   }
 
@@ -1092,54 +1093,49 @@ export class ClienteDetalle {
     this.cdr.markForCheck();
   }
 
-  // ── Notificación de renovación al cliente ────────────────────────────────
+  // ── Notificación de renovación por ficha ─────────────────────────────────
 
   readonly lastSent = signal<string | null>(null);
-  notifying = false;
-  private canSendNotification = false;
-
-  /** Tipo de aviso según el contrato más reciente de cada sepultura del cliente. */
-  private notificationTypeForCliente(): NotificationType | null {
-    const ultimos = this.sepulturasConDatos()
-      .map(sep => this.ultimoContrato(sep.contratos))
-      .filter((c): c is Contrato => c !== null);
-    if (ultimos.some(c => this.estadoContrato(c.fecha_vencimiento as unknown as string) === 'vencido')) return 'vencidas';
-    if (ultimos.some(c => this.estadoContrato(c.fecha_vencimiento as unknown as string) === 'por-vencer')) return 'por-vencer';
-    return null;
-  }
-
-  get canNotify(): boolean {
-    return this.canSendNotification && !!this.cliente()?.email && this.notificationTypeForCliente() !== null;
-  }
+  notifyingSepulturaId: number | null = null;
+  notifiedSepulturaId: number | null = null;
+  notifyMessage = '';
+  notifyError = '';
 
   async loadLastSent(): Promise<void> {
     const cliente = this.cliente();
     if (!cliente) return;
     try {
       const res = await firstValueFrom(this.dashboardStatsService.getLastSentForClient(cliente.id));
-      this.canSendNotification = res.canSend;
       this.lastSent.set(res.lastSent ? new Date(res.lastSent).toLocaleString('es-CL') : null);
     } catch {
-      // silencioso — el botón de notificar simplemente queda deshabilitado
+      // silencioso — el estado de "Último envío" simplemente no se actualiza
     } finally {
       this.cdr.markForCheck();
     }
   }
 
-  async notifyCliente(): Promise<void> {
-    const cliente = this.cliente();
-    const tipo = this.notificationTypeForCliente();
-    if (!cliente || !tipo || this.notifying || !this.canNotify) return;
-    if (!confirm(`¿Enviar aviso de renovación a ${this.nombreCompleto}?`)) return;
+  /** Notifica por correo la renovación de una ficha (sepultura) puntual. */
+  async notifyFicha(sep: SepulturaConDatos, uc: Contrato): Promise<void> {
+    if (this.notifyingSepulturaId !== null) return;
+    const estado = this.estadoContrato(uc.fecha_vencimiento as unknown as string);
+    if (estado === 'vigente') return;
+    const tipo: NotificationType = estado === 'vencido' ? 'vencidas' : 'por-vencer';
+    if (!confirm(`¿Enviar aviso de renovación por la ficha N° ${sep.numero_ficha}?`)) return;
 
-    this.notifying = true;
+    this.notifyingSepulturaId = sep.id;
+    this.notifiedSepulturaId = sep.id;
+    this.notifyMessage = '';
+    this.notifyError = '';
     try {
-      await firstValueFrom(this.dashboardStatsService.notifyClient(cliente.id, tipo));
+      await firstValueFrom(this.dashboardStatsService.queueIndividualNotification(tipo, sep.id));
+      this.notifyMessage = 'Notificación agregada a la cola de envío.';
       await this.loadLastSent();
-    } catch {
-      // silencioso — el estado de "Último envío" simplemente no se actualiza
+    } catch (error) {
+      this.notifyError = error instanceof HttpErrorResponse && typeof error.error?.error === 'string'
+        ? error.error.error
+        : 'No fue posible solicitar el envío. Intenta nuevamente.';
     } finally {
-      this.notifying = false;
+      this.notifyingSepulturaId = null;
       this.cdr.markForCheck();
     }
   }

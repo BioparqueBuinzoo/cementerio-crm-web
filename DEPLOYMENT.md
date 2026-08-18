@@ -17,6 +17,7 @@ Este proyecto **ya está corriendo en producción** (desplegado hasta ahora vía
 - `src/environments/environment.production.ts` trae `apiUrl: ''` y URLs relativas (`/api/...`), es decir, el frontend asume que la API vive en el mismo origen — correcto para el proxy Apache (`/api` → `cementerio-crm-api`). No requiere cambios.
 - Apache proxya `/` hacia `127.0.0.1:4200` (este frontend) y `/api` hacia `127.0.0.1:3100` (`cementerio-crm-api`).
 - El `redirectUri` de Azure AD en `environment.production.ts` está fijado a `https://crm.parquedeasis.cl` — si el dominio de producción cambia, hay que actualizar tanto ese archivo como el App Registration de Azure.
+- El frontend solicita el scope `access_as_user` de `personalServices`; el App Registration del SPA debe estar autorizado para ese scope. El token se intercambia a través de `cementerio-crm-api`, que conserva la sesión en cookie HttpOnly.
 
 ## 2. Runner autohospedado
 

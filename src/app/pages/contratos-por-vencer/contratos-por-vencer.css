@@ -104,7 +104,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border-radius: 7px;
   color: var(--color-primary-dark, #2d6a4f); background: rgba(45,106,79,.07);
-  border: 1px solid rgba(45,106,79,.3); text-decoration: none; transition: all .2s;
+  border: 1px solid rgba(45,106,79,.3); text-decoration: none; transition: background .2s, color .2s;
 }
 .btn-ficha:hover { background: var(--color-primary-dark, #2d6a4f); color: #fff; }
 
@@ -113,3 +113,17 @@
 
 .row-clickable { cursor: pointer; }
 .row-clickable:hover td { background: #f0f7f2 !important; }
+
+@media (max-width: 900px) {
+  .page-container { padding: 16px; gap: 14px; }
+  .page-header { margin: -16px -16px 0; }
+  .data-table { min-width: 780px; }
+}
+
+@media (max-width: 600px) {
+  .page-container { padding: 12px; gap: 12px; }
+  .page-header { margin: -12px -12px 0; padding: 12px; }
+  .header-brand-icon { display: none; }
+  .title-text span { display: block; }
+  .data-table th, .data-table td { padding: 9px 11px; }
+}

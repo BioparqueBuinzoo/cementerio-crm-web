@@ -1,19 +1,12 @@
 <div #clientesContainer class="clientes-container">
 
-  <!-- ── Header ─────────────────────────────────── -->
   <div class="clientes-header">
-    <div class="header-left">
-      <a routerLink="/asis" class="btn-back" title="Volver al inicio">
-        <re-icon name="chevron-left" width="20" height="20"></re-icon>
-      </a>
-      <div class="clientes-title">
-      <re-icon name="users" class="header-brand-icon" width="24" height="24"></re-icon>
-      <div class="title-text">
+    <div class="management-heading">
+      <div>
+        <span class="eyebrow">GESTIÓN DE CLIENTES</span>
         <h1>Clientes</h1>
-        <span>Gestión de clientes del cementerio</span>
       </div>
     </div>
-    </div><!-- /header-left -->
     <div class="clientes-actions">
       <div class="rut-search-group">
         <div class="clientes-search">
@@ -37,6 +30,24 @@
       </button>
     </div>
   </div>
+
+  @if (filtersOpen()) {
+    <div class="filters-panel">
+      <div class="filter-field">
+        <label for="cliente-email-filter">Contacto por email</label>
+        <select id="cliente-email-filter" [value]="emailEstado()" (change)="emailEstado.set($any($event.target).value); applyFilters()">
+          <option value="todos">Todos los clientes</option>
+          <option value="con-email">Con email registrado</option>
+          <option value="sin-email">Sin email registrado</option>
+        </select>
+      </div>
+      <div class="filter-field filter-field-wide">
+        <label for="cliente-comuna-filter">Comuna</label>
+        <input id="cliente-comuna-filter" type="text" placeholder="Ej: Buin" [value]="comunaFilter()" (input)="comunaFilter.set($any($event.target).value)" (keydown.enter)="applyFilters()">
+      </div>
+      <button class="filter-clear" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  }
 
   <!-- ── Error state ─────────────────────────────── -->
   @if (error()) {
@@ -87,7 +98,11 @@
               @for (cliente of displayedClientes(); track cliente.id) {
                 <tr class="row-clickable" (dblclick)="irAFicha(cliente.id)">
                   @for (field of ['id', 'rut', 'nombre_completo', 'direccion', 'comuna', 'ciudad', 'telefono', 'celular', 'email']; track field) {
-                    <td>{{ $any(cliente)[field] || '—' }}</td>
+                    <td>
+                      <span class="cell-truncated" [title]="$any(cliente)[field] || '—'">
+                        {{ $any(cliente)[field] || '—' }}
+                      </span>
+                    </td>
                   }
                       <td class="col-actions">
                         <a [routerLink]="['/asis/clientes', cliente.id]" class="btn-link-ficha" title="Ver ficha">

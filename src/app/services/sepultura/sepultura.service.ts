@@ -23,7 +23,9 @@ export class SepulturaService {
   readonly page = this._page.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
 
-  async getAll(page: number = 1, limit: number = 20, idCliente?: number, rut?: string, numeroFicha?: string): Promise<void> {
+  async getAll(
+    page: number = 1, limit: number = 20, idCliente?: number, rut?: string, numeroFicha?: string, estado?: string, tipo?: string
+  ): Promise<void> {
     try {
       this._loading.set(true);
       this._error.set(null);
@@ -31,6 +33,8 @@ export class SepulturaService {
       if (idCliente != null) url += `&idCliente=${idCliente}`;
       if (rut) url += `&rut=${encodeURIComponent(rut)}`;
       if (numeroFicha) url += `&numero_ficha=${encodeURIComponent(numeroFicha)}`;
+      if (estado) url += `&estado=${encodeURIComponent(estado)}`;
+      if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
       const response = await firstValueFrom(
         this.http.get<SepulturaPaginatedResult>(url),
       );
