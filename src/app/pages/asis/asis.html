@@ -42,74 +42,70 @@
     </div>
 
     <nav class="sidebar-nav" aria-label="Navegación principal">
-      @if (isSidebarOpen()) { <span class="nav-section-label">General</span> }
+      <span class="nav-section-label" data-section-short="G" [class.nav-section-label-collapsed]="!isSidebarOpen()">General</span>
       <!-- INICIO -->
-      <a routerLink="/asis" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" data-tooltip="Inicio" [attr.title]="isSidebarOpen() ? null : 'Inicio'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="home" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">INICIO</span> }
       </a>
-      @if (isSidebarOpen()) { <span class="nav-section-label">Gestión</span> }
+      <span class="nav-section-label" data-section-short="G" [class.nav-section-label-collapsed]="!isSidebarOpen()">Gestión</span>
       <!-- CLIENTES -->
-      <a routerLink="/asis/clientes" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/clientes" routerLinkActive="active" class="nav-item" data-tooltip="Clientes" [attr.title]="isSidebarOpen() ? null : 'Clientes'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="users-alt" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">CLIENTES</span> }
       </a>
       <!-- SEPULTURAS -->
-      <a routerLink="/asis/sepulturas" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/sepulturas" routerLinkActive="active" class="nav-item" data-tooltip="Sepulturas" [attr.title]="isSidebarOpen() ? null : 'Sepulturas'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="grid" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">SEPULTURAS</span> }
       </a>
       <!-- MASCOTAS -->
-      <a routerLink="/asis/mascotas" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/mascotas" routerLinkActive="active" class="nav-item" data-tooltip="Mascotas" [attr.title]="isSidebarOpen() ? null : 'Mascotas'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="paw" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">MASCOTAS</span> }
       </a>
-      @if (isSidebarOpen()) { <span class="nav-section-label">Contratos</span> }
+      <span class="nav-section-label" data-section-short="C" [class.nav-section-label-collapsed]="!isSidebarOpen()">Contratos</span>
       <!-- CONTRATOS ACTIVOS -->
-      <a routerLink="/asis/contratos-activos" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/contratos-activos" routerLinkActive="active" class="nav-item" data-tooltip="Contratos activos" [attr.title]="isSidebarOpen() ? null : 'Contratos activos'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="file-text" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">ACTIVOS</span> }
       </a>
       <!-- CONTRATOS POR VENCER -->
-      <a routerLink="/asis/contratos-por-vencer" routerLinkActive="active" class="nav-item nav-item-warning" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/contratos-por-vencer" routerLinkActive="active" class="nav-item nav-item-warning" data-tooltip="Contratos por vencer" [attr.title]="isSidebarOpen() ? null : 'Contratos por vencer'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="clock" width="20" height="20"></re-icon>
         </span>
-        @if (isSidebarOpen()) {
-          <span class="nav-text">POR VENCER</span>
-          @if (porVencerCount() > 0) { <span class="nav-badge nav-badge-warning">{{ porVencerCount() }}</span> }
-        }
+        @if (isSidebarOpen()) { <span class="nav-text">POR VENCER</span> }
+        @if (porVencerCount() > 0) { <span class="nav-badge nav-badge-warning">{{ isSidebarOpen() ? porVencerCount() : '!' }}</span> }
       </a>
       <!-- CONTRATOS VENCIDOS -->
-      <a routerLink="/asis/contratos-vencidos" routerLinkActive="active" class="nav-item nav-item-danger" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/contratos-vencidos" routerLinkActive="active" class="nav-item nav-item-danger" data-tooltip="Contratos vencidos" [attr.title]="isSidebarOpen() ? null : 'Contratos vencidos'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="alert" width="20" height="20"></re-icon>
         </span>
-        @if (isSidebarOpen()) {
-          <span class="nav-text">VENCIDOS</span>
-          @if (vencidosCount() > 0) { <span class="nav-badge nav-badge-danger">{{ vencidosCount() }}</span> }
-        }
+        @if (isSidebarOpen()) { <span class="nav-text">VENCIDOS</span> }
+        @if (vencidosCount() > 0) { <span class="nav-badge nav-badge-danger">{{ isSidebarOpen() ? vencidosCount() : '!' }}</span> }
       </a>
       <!-- CONTRATOS ONLINE -->
-      <a routerLink="/asis/contratos-online" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/contratos-online" routerLinkActive="active" class="nav-item" data-tooltip="Contratos online" [attr.title]="isSidebarOpen() ? null : 'Contratos online'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="envelope" width="20" height="20"></re-icon>
         </span>
         @if (isSidebarOpen()) { <span class="nav-text">ONLINE</span> }
       </a>
-      @if (isSidebarOpen()) { <span class="nav-section-label">Administración</span> }
+      <span class="nav-section-label" data-section-short="A" [class.nav-section-label-collapsed]="!isSidebarOpen()">Administración</span>
       <!-- CONFIGURACION -->
-      <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item" data-tooltip="Configuración" [attr.title]="isSidebarOpen() ? null : 'Configuración'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="settings" width="20" height="20"></re-icon>
         </span>

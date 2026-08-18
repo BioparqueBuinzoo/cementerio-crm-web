@@ -1,4 +1,4 @@
-<div class="config-container">
+<div class="config-container config-detail-page">
 
   <div class="config-header">
     <a routerLink="/asis/configuracion" class="header-back-link" aria-label="Volver a Configuración">
@@ -40,7 +40,14 @@
         <div class="email-layout">
           <div class="email-main">
 
-            <h3 class="email-section-title">Vista previa (datos de ejemplo)</h3>
+            <div class="section-heading-row">
+              <h3 class="email-section-title">Vista previa (datos de ejemplo)</h3>
+              <select class="test-email-select preview-type-select" [ngModel]="previewType" (ngModelChange)="cambiarTipoPreview($event)" aria-label="Tipo de correo a previsualizar">
+                <option value="por-vencer">Por vencer (30 días)</option>
+                <option value="vencidas">Vencida (recordatorio semanal)</option>
+                <option value="vence-hoy">Vence hoy / Paga hoy</option>
+              </select>
+            </div>
             @if (previewLoading()) {
               <p class="config-muted">Generando vista previa…</p>
             } @else if (previewError()) {
@@ -55,13 +62,8 @@
 
           <div class="email-side">
             <h3 class="email-section-title">Enviar correo de prueba</h3>
-             <p class="config-muted">Envía el correo de ejemplo a una dirección propia para revisar el diseño.</p>
+             <p class="config-muted">Envía a una dirección propia el correo que se ve en la vista previa (<strong>{{ nombrePreviewType() }}</strong>).</p>
              <div class="test-email-form">
-               <label class="test-email-label" for="test-email-type">Tipo de correo</label>
-               <select id="test-email-type" class="test-email-select" [(ngModel)]="testEmailType">
-                 <option value="por-vencer">Por vencer (30 días)</option>
-                 <option value="vence-hoy">Vence hoy / Paga hoy</option>
-               </select>
                <label class="test-email-label" for="test-email-to">Correo de destino</label>
                <input
                  id="test-email-to"

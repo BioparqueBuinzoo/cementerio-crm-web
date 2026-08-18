@@ -23,6 +23,7 @@ export class ConfiguracionCorreo implements OnInit {
   readonly correoError = signal('');
 
   // Vista previa del correo
+  previewType: TestNotificationType = 'por-vencer';
   readonly previewLoading = signal(false);
   readonly previewHtml = signal<SafeHtml | null>(null);
   readonly previewError = signal('');
@@ -32,9 +33,8 @@ export class ConfiguracionCorreo implements OnInit {
   readonly latestBatch = signal<NotificationBatch | null>(null);
   readonly latestBatchError = signal('');
 
-  // Envío de correo de prueba
+  // Envío de correo de prueba (usa el mismo tipo que se está previsualizando)
   testEmailTo = '';
-  testEmailType: TestNotificationType = 'vence-hoy';
   readonly testEmailSending = signal(false);
   readonly testEmailResult = signal('');
   readonly testEmailError = signal('');
@@ -125,9 +125,23 @@ export class ConfiguracionCorreo implements OnInit {
     });
   }
 
+  cambiarTipoPreview(tipo: TestNotificationType): void {
+    this.previewType = tipo;
+    this.cargarPreview();
+  }
+
+  nombrePreviewType(): string {
+    switch (this.previewType) {
+      case 'por-vencer': return 'Por vencer (30 días)';
+      case 'vencidas': return 'Vencida (recordatorio semanal)';
+      case 'vence-hoy': return 'Vence hoy / Paga hoy';
+    }
+  }
+
   private cargarPreview(): void {
     this.previewLoading.set(true);
-    this.statsService.getNotificationPreview().subscribe({
+    this.previewError.set('');
+    this.statsService.getNotificationPreview(this.previewType).subscribe({
       next: (res) => {
         this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(res.html));
         this.previewLoading.set(false);
@@ -159,7 +173,7 @@ export class ConfiguracionCorreo implements OnInit {
     this.testEmailSending.set(true);
     this.testEmailResult.set('');
     this.testEmailError.set('');
-    this.statsService.sendTestEmail(to, this.testEmailType).subscribe({
+    this.statsService.sendTestEmail(to, this.previewType).subscribe({
       next: () => {
         this.testEmailResult.set(`Correo de prueba enviado a ${to}.`);
         this.testEmailSending.set(false);

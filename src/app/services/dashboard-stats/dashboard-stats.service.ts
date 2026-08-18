@@ -70,7 +70,7 @@ export interface ContratosOnlinePaginados {
 }
 
 export type NotificationType = 'por-vencer' | 'vencidas';
-export type TestNotificationType = 'por-vencer' | 'vence-hoy';
+export type TestNotificationType = 'por-vencer' | 'vencidas' | 'vence-hoy';
 
 export interface NotificationSummary {
   sepulturas: number;
@@ -198,7 +198,7 @@ export class DashboardStatsService {
     );
   }
 
-  getNotificationPreview(tipo = 'vence-hoy'): Observable<{ subject: string; html: string }> {
+  getNotificationPreview(tipo: TestNotificationType = 'vence-hoy'): Observable<{ subject: string; html: string }> {
     return this.http.get<{ subject: string; html: string }>(
       `${this.url}/vencimientos/notificaciones/vista-previa?tipo=${tipo}`,
     );

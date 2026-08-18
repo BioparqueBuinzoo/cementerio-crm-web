@@ -1,4 +1,4 @@
-<div class="config-container">
+<div class="config-container config-detail-page">
   <div class="config-header">
     <a routerLink="/asis/configuracion" class="header-back-link" aria-label="Volver a Configuración">
       <re-icon name="chevron-left" width="22" height="22"></re-icon>
@@ -19,7 +19,7 @@
     </a>
   </nav>
 
-  <section class="config-card">
+  <section class="config-card users-config-card">
     @if (!auth.isAdmin()) {
       <div class="config-card-body"><p class="config-muted">Solo un administrador puede administrar usuarios.</p></div>
     } @else if (loadingUsuarios() || !rolesLoaded()) {
