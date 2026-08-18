@@ -23,9 +23,12 @@ export class MascotaService {
   readonly page = this._page.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
 
+  private requestToken = 0;
+
   async getAll(
     page: number = 1, limit: number = 20, idSepultura?: number, nombre?: string, especie?: string, sexo?: string, estado?: string
   ): Promise<void> {
+    const token = ++this.requestToken;
     try {
       this._loading.set(true);
       this._error.set(null);
@@ -38,14 +41,16 @@ export class MascotaService {
       const response = await firstValueFrom(
         this.http.get<MascotaPaginatedResult>(url),
       );
+      if (token !== this.requestToken) return; // una solicitud más nueva ya reemplazó a esta
       this._mascotas.set(response.data);
       this._total.set(response.total);
       this._page.set(response.page);
       this._totalPages.set(response.totalPages);
     } catch {
+      if (token !== this.requestToken) return;
       this._error.set('Error al obtener las mascotas');
     } finally {
-      this._loading.set(false);
+      if (token === this.requestToken) this._loading.set(false);
     }
   }
 

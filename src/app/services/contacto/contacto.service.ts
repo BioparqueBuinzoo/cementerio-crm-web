@@ -21,6 +21,12 @@ export class ContactoService {
     );
   }
 
+  addNuevo(idCliente: number, clienteData: Partial<Cliente>): Promise<number> {
+    return firstValueFrom(
+      this.http.post<{ id: number }>(`${this.baseUrl}/${idCliente}/contactos/nuevo`, clienteData)
+    ).then(res => res.id);
+  }
+
   remove(idCliente: number, idContacto: number): Promise<void> {
     return firstValueFrom(
       this.http.delete<void>(`${this.baseUrl}/${idCliente}/contactos/${idContacto}`)

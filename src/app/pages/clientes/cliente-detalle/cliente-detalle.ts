@@ -13,7 +13,7 @@ import { Mascota, CrearMascotaDto } from '../../../models/mascotas.model';
 import { ContratoService } from '../../../services/contrato/contrato.service';
 import { Contrato, CrearContratoDto } from '../../../models/contratos.model';
 import { TipoSepulturaService, TipoSepultura } from '../../../services/tipo-sepultura/tipo-sepultura.service';
-import { LookupService, FormaPago, Usuario, Encargado } from '../../../services/lookup/lookup.service';
+import { LookupService, FormaPago, Encargado } from '../../../services/lookup/lookup.service';
 import { ContactoService } from '../../../services/contacto/contacto.service';
 import { ObservacionClienteService, ObservacionCliente } from '../../../services/observacion-cliente/observacion-cliente.service';
 import { AuthService } from '../../../services/auth/auth.service';
@@ -70,7 +70,6 @@ export class ClienteDetalle {
   contratoErrorMsg = '';
   contratoSepId: number | null = null;
   formasPago: FormaPago[] = [];
-  usuarios: Usuario[] = [];
   encargados: Encargado[] = [];
   contratoForm: Omit<CrearContratoDto, 'id_sepultura'> = {
     fecha_pago: '', fecha_vencimiento: '', valor_renovacion: 0,
@@ -403,9 +402,9 @@ export class ClienteDetalle {
     this.savingContacto = true;
     this.contactoErrorMsg = '';
     try {
-      // Crear el cliente contacto y vincularlo
-      const idContacto = await this.clienteService.create(this.contactoForm);
-      await this.contactoService.add(cliente.id, idContacto);
+      // Crear el cliente contacto y vincularlo en una sola operación atómica
+      await this.contactoService.addNuevo(cliente.id, this.contactoForm);
+      this.dashboardStatsService.invalidate();
       const contactosActualizados = await this.contactoService.getByClienteId(cliente.id);
       this.contactos.set(contactosActualizados);
       this.modalContactoVisible = false;
@@ -444,10 +443,15 @@ export class ClienteDetalle {
     ubicacion_nueva: '', estado: 'En uso', encargado: '', observaciones: '',
   };
 
+  private loadToken = 0;
+
   constructor() {
     effect(async () => {
       const id = this.id();
       if (!id) return;
+      // Evita que una navegación rápida entre fichas deje datos de un cliente
+      // anterior sobrescribiendo los de la ficha que el usuario ya está viendo.
+      const token = ++this.loadToken;
 
       try {
         this.loading.set(true);
@@ -455,6 +459,7 @@ export class ClienteDetalle {
         this.fichasExpanded.clear();
 
         const cliente = await this.clienteService.getClienteById(id);
+        if (token !== this.loadToken) return;
         if (!cliente) {
           this.error.set('No se encontró el cliente');
           return;
@@ -467,6 +472,7 @@ export class ClienteDetalle {
           this.contactoService.getByClienteId(cliente.id).catch(() => [] as Cliente[]),
           this.observacionService.getByClienteId(cliente.id).catch(() => [] as ObservacionCliente[]),
         ]);
+        if (token !== this.loadToken) return;
 
         this.contactos.set(contactos);
         this.observaciones.set(observaciones);
@@ -486,12 +492,13 @@ export class ClienteDetalle {
             return { ...sep, mascotas: mascotas ?? [], contratos };
           }),
         );
+        if (token !== this.loadToken) return;
 
         this.sepulturasConDatos.set(sepulturasConDatos);
       } catch {
-        this.error.set('Error al cargar los datos del cliente');
+        if (token === this.loadToken) this.error.set('Error al cargar los datos del cliente');
       } finally {
-        this.loading.set(false);
+        if (token === this.loadToken) this.loading.set(false);
       }
     });
   }
@@ -682,6 +689,7 @@ export class ClienteDetalle {
         id_pagador: Number(this.contratoForm.id_pagador),
         valor_renovacion: Number(this.contratoForm.valor_renovacion),
       });
+      this.dashboardStatsService.invalidate();
       // Recargar contratos de esa sepultura
       const actualizadas = this.sepulturasConDatos().map(async (sep) => {
         if (sep.id !== this.contratoSepId) return sep;
@@ -705,10 +713,6 @@ export class ClienteDetalle {
     const lastDay = new Date(Date.UTC(targetYear, month, 0)).getUTCDate();
     const expiration = new Date(Date.UTC(targetYear, month - 1, Math.min(day, lastDay)));
     this.contratoForm.fecha_vencimiento = expiration.toISOString().slice(0, 10);
-  }
-
-  nombreUsuario(u: Usuario): string {
-    return [u.nombre, u.apellido1, u.apellido2].filter(Boolean).join(' ');
   }
 
   get tituloModalContrato(): string {
@@ -746,6 +750,7 @@ export class ClienteDetalle {
     this.mascotaErrorMsg = '';
     try {
       await this.mascotaService.create({ ...this.mascotaForm, id_sepultura: this.mascotaSepId });
+      this.dashboardStatsService.invalidate();
       // Recargar mascotas de esa sepultura
       const actualizadas = this.sepulturasConDatos().map(async (sep) => {
         if (sep.id !== this.mascotaSepId) return sep;
@@ -839,6 +844,7 @@ export class ClienteDetalle {
     this.sepErrorMsg = '';
     try {
       await this.sepulturaService.create({ ...this.sepForm, id_cliente: cliente.id });
+      this.dashboardStatsService.invalidate();
       // Recargar sepulturas del cliente
       const sepulturas = await this.sepulturaService.getByClienteId(cliente.id);
       if (sepulturas?.length) {
@@ -1106,6 +1112,7 @@ export class ClienteDetalle {
     if (!cliente) return;
     try {
       const res = await firstValueFrom(this.dashboardStatsService.getLastSentForClient(cliente.id));
+      if (this.id() !== cliente.id) return; // la navegación cambió de cliente mientras esto cargaba
       this.lastSent.set(res.lastSent ? new Date(res.lastSent).toLocaleString('es-CL') : null);
     } catch {
       // silencioso — el estado de "Último envío" simplemente no se actualiza

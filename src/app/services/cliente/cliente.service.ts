@@ -24,11 +24,15 @@ export class ClienteService {
   readonly page = this._page.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
 
+  private requestToken = 0;
+
   async getAllClientes(
     page: number = 1, limit: number = 20, rut?: string, nombre?: string, emailEstado?: string, comuna?: string
   ): Promise<void> {
+    const token = ++this.requestToken;
     try {
       this._loading.set(true);
+      this._error.set(null);
       let url = `${this.baseUrl}?page=${page}&limit=${limit}`;
       if (rut)    url += `&rut=${encodeURIComponent(rut)}`;
       if (nombre) url += `&nombre=${encodeURIComponent(nombre)}`;
@@ -37,14 +41,16 @@ export class ClienteService {
       const response = await firstValueFrom(
         this.http.get<PaginatedResult<Cliente>>(url),
       );
+      if (token !== this.requestToken) return; // una solicitud más nueva ya reemplazó a esta
       this._clientes.set(response.data);
       this._total.set(response.total);
       this._page.set(response.page);
       this._totalPages.set(response.totalPages);
     } catch {
+      if (token !== this.requestToken) return;
       this._error.set('Error al obtener los clientes');
     } finally {
-      this._loading.set(false);
+      if (token === this.requestToken) this._loading.set(false);
     }
   }
 

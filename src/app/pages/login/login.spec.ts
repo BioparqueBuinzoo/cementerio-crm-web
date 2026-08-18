@@ -15,7 +15,7 @@ describe('Login', () => {
       imports: [Login],
       providers: [
         { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
-        { provide: AuthService, useValue: { error: signal(null), login: vi.fn() } },
+        { provide: AuthService, useValue: { error: signal(null), loading: signal(false), login: vi.fn() } },
       ]
     })
     .compileComponents();
