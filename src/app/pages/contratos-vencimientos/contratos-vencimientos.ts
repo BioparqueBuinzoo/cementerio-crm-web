@@ -31,10 +31,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
   readonly isExpired = this.notificationType === 'vencidas';
   readonly limit = 25;
   readonly periodDays = 30;
-  readonly lastGlobalNotification = {
-    date: '14 ago 2026',
-    detail: '24 destinatarios · dato de ejemplo',
-  };
+  lastGlobalNotification: { date: string; detail: string } | null = null;
 
   data: VencimientoItem[] = [];
   total = 0;
@@ -49,7 +46,28 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
 
   totalAmount = 0;
 
-  ngOnInit(): void { this.load(1); }
+  ngOnInit(): void {
+    this.load(1);
+    this.loadLastGlobalNotification();
+  }
+
+  private loadLastGlobalNotification(): void {
+    this.statsService.getLatestMassBatch().subscribe({
+      next: batch => {
+        this.lastGlobalNotification = batch ? this.toGlobalNotificationSummary(batch) : null;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private toGlobalNotificationSummary(batch: NotificationBatch): { date: string; detail: string } {
+    const when = new Date(batch.completedAt ?? batch.createdAt);
+    const date = when.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
+    const detail = batch.status === 'queued' || batch.status === 'processing'
+      ? `Enviando… ${batch.sentCount}/${batch.recipientCount} destinatario(s)`
+      : `${batch.recipientCount} destinatario(s)`;
+    return { date, detail };
+  }
 
   ngOnDestroy(): void { this.clearBatchTimer(); }
 
@@ -113,6 +131,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
 
       const batch = await firstValueFrom(this.statsService.queueMassNotification(this.notificationType));
       this.notificationMessage = `Lote creado para ${batch.recipientCount} destinatario(s).`;
+      this.lastGlobalNotification = this.toGlobalNotificationSummary(batch);
       this.watchBatch(batch);
     } catch (error) {
       this.notificationError = this.errorMessage(error);
@@ -134,6 +153,9 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
           this.notificationMessage = `Envío finalizado: ${updated.sentCount} correo(s) enviado(s).`;
         } else if (updated.status === 'completed_with_errors') {
           this.notificationError = `Envío finalizado con ${updated.failedCount} error(es) y ${updated.skippedCount} omitido(s).`;
+        }
+        if (updated.scope === 'masiva' && (updated.status === 'completed' || updated.status === 'completed_with_errors')) {
+          this.lastGlobalNotification = this.toGlobalNotificationSummary(updated);
         }
         this.cdr.markForCheck();
         this.watchBatch(updated);

@@ -39,8 +39,13 @@
         <div class="overview-icon"><re-icon name="envelope" width="22" height="22"></re-icon></div>
         <div class="overview-copy">
           <span class="overview-label">Última notificación global</span>
-          <strong>{{ lastGlobalNotification.date }}</strong>
-          <small>{{ lastGlobalNotification.detail }}</small>
+          @if (lastGlobalNotification) {
+            <strong>{{ lastGlobalNotification.date }}</strong>
+            <small>{{ lastGlobalNotification.detail }}</small>
+          } @else {
+            <strong>Sin envíos</strong>
+            <small>Aún no se ha notificado a todos</small>
+          }
         </div>
       </article>
     </section>
