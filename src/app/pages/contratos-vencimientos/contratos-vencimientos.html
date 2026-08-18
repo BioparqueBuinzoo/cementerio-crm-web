@@ -23,7 +23,7 @@
         <div class="overview-icon"><re-icon name="clock" width="22" height="22"></re-icon></div>
         <div class="overview-copy">
           <span class="overview-label">{{ isExpired ? 'Contratos vencidos' : 'Contratos por vencer' }}</span>
-          <strong>{{ total }}</strong>
+          @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ total }}</strong> }
           <small>{{ isExpired ? 'Pendientes de renovación' : 'Durante los próximos ' + periodDays + ' días' }}</small>
         </div>
       </article>
@@ -31,7 +31,7 @@
         <div class="overview-icon"><re-icon name="file-text" width="22" height="22"></re-icon></div>
         <div class="overview-copy">
           <span class="overview-label">{{ isExpired ? 'Monto total pendiente' : 'Monto total a renovar' }}</span>
-          <strong>{{ formatCurrency(totalAmount) }}</strong>
+          @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ formatCurrency(totalAmount) }}</strong> }
           <small>Valor de renovación registrado</small>
         </div>
       </article>

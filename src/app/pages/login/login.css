@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: row;
   min-height: 100vh;
+  background: #f6f9f7;
+  overflow: hidden;
 }
 
 /* Panel izquierdo: Branding con foto de fondo */
@@ -16,12 +18,14 @@
   justify-content: center;
   position: relative;
   padding: 2rem;
+  isolation: isolate;
+  animation: login-brand-in .7s ease both;
 }
 
 .brand-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(171, 184, 195, 0.85);
+  background: linear-gradient(145deg, rgba(222, 231, 226, .9), rgba(171, 184, 195, .8));
   z-index: 1;
 }
 
@@ -78,6 +82,16 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  position: relative;
+  animation: login-panel-in .55s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.login-form-panel::before {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 12% 8%, rgba(45, 106, 79, .08), transparent 22rem);
+  content: '';
+  pointer-events: none;
 }
 
 .login-form-content {
@@ -86,6 +100,8 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .form-header h1 {
@@ -123,6 +139,12 @@
   transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
+.btn-microsoft[aria-busy="true"] {
+  border-color: rgba(45, 106, 79, .3);
+  color: #285f45;
+  background: #f7fbf8;
+}
+
 .btn-microsoft:hover:not(:disabled) {
   border-color: #1d7021;
   color: #1d7021;
@@ -144,6 +166,38 @@
   flex-shrink: 0;
 }
 
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 2px solid rgba(45, 106, 79, .22);
+  border-top-color: #2d6a4f;
+  border-radius: 50%;
+  animation: login-spin .75s linear infinite;
+}
+
+.login-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  margin-top: -.9rem;
+  color: #6b7d70;
+  font-size: .75rem;
+  text-align: center;
+  animation: login-status-in .25s ease both;
+}
+
+.progress-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #2d6a4f;
+  box-shadow: 0 0 0 4px rgba(45, 106, 79, .1);
+  animation: login-pulse 1.2s ease-in-out infinite;
+}
+
 /* Error */
 .login-error {
   display: flex;
@@ -155,6 +209,7 @@
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   border: 1px solid #fecaca;
+  animation: login-status-in .25s ease both;
 }
 
 /* Sin rol */
@@ -165,6 +220,7 @@
   border: 1px solid #bfdbfe;
   border-radius: 0.625rem;
   padding: 1rem 1.125rem;
+  animation: login-status-in .25s ease both;
 }
 
 .sin-rol-icon {
@@ -235,5 +291,34 @@
   .login-form-panel {
     flex: 1;
     padding: 2rem 1.5rem;
+  }
+}
+
+@keyframes login-panel-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes login-brand-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes login-status-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes login-spin { to { transform: rotate(360deg); } }
+
+@keyframes login-pulse {
+  0%, 100% { opacity: .45; transform: scale(.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-brand, .login-form-panel, .login-progress, .login-error, .login-sin-rol,
+  .loading-spinner, .progress-dot {
+    animation: none;
   }
 }

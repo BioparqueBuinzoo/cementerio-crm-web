@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth/auth.service';
 import { AsisUsersService } from '../../services/asis-users/asis-users.service';
-import { DashboardStatsService, NotificationBatch } from '../../services/dashboard-stats/dashboard-stats.service';
+import { DashboardStatsService, NotificationBatch, TestNotificationType } from '../../services/dashboard-stats/dashboard-stats.service';
 import { AppAccessStatus, AsisRole, AsisUser } from '../../models/asis-users.model';
 
 @Component({
@@ -46,18 +46,84 @@ export class Configuracion implements OnInit {
 
   // Envío de correo de prueba
   testEmailTo = '';
+  testEmailType: TestNotificationType = 'vence-hoy';
   readonly testEmailSending = signal(false);
   readonly testEmailResult = signal('');
   readonly testEmailError = signal('');
+
+  // Notificaciones automáticas
+  readonly autoNotifLoading = signal(false);
+  readonly autoNotifSaving = signal(false);
+  readonly autoNotif30Dias = signal(false);
+  readonly autoNotifVenceHoy = signal(false);
+  readonly autoNotifSendTime = signal('09:00');
+  readonly autoNotifLastRun = signal<string | null>(null);
+  readonly autoNotifError = signal('');
 
   ngOnInit(): void {
     this.cargarEstadoCorreo();
     this.cargarPreview();
     this.cargarUltimoLote();
+    this.cargarAutoNotificaciones();
     if (this.auth.isAdmin()) {
       this.cargarUsuarios();
       this.cargarRoles();
     }
+  }
+
+  private cargarAutoNotificaciones(): void {
+    this.autoNotifLoading.set(true);
+    this.statsService.getAutoNotificationSettings().subscribe({
+      next: (res) => {
+        this.autoNotif30Dias.set(res.enabled30Dias);
+        this.autoNotifVenceHoy.set(res.enabledVenceHoy);
+        this.autoNotifSendTime.set(res.sendTime);
+        this.autoNotifLastRun.set(res.lastRunDate);
+        this.autoNotifLoading.set(false);
+      },
+      error: () => {
+        this.autoNotifError.set('No se pudo obtener el estado de las notificaciones automáticas.');
+        this.autoNotifLoading.set(false);
+      },
+    });
+  }
+
+  toggleAutoNotificaciones(tipo: '30Dias' | 'VenceHoy'): void {
+    if (this.autoNotifSaving()) return;
+    const enabled30Dias = tipo === '30Dias' ? !this.autoNotif30Dias() : this.autoNotif30Dias();
+    const enabledVenceHoy = tipo === 'VenceHoy' ? !this.autoNotifVenceHoy() : this.autoNotifVenceHoy();
+    this.autoNotifSaving.set(true);
+    this.autoNotifError.set('');
+    this.statsService.setAutoNotificationEnabled(enabled30Dias, enabledVenceHoy, this.autoNotifSendTime()).subscribe({
+      next: (res) => {
+        this.autoNotif30Dias.set(res.enabled30Dias);
+        this.autoNotifVenceHoy.set(res.enabledVenceHoy);
+        this.autoNotifSendTime.set(res.sendTime);
+        this.autoNotifLastRun.set(res.lastRunDate);
+        this.autoNotifSaving.set(false);
+      },
+      error: () => {
+        this.autoNotifError.set('No se pudo actualizar la configuración. Intenta nuevamente.');
+        this.autoNotifSaving.set(false);
+      },
+    });
+  }
+
+  cambiarHoraNotificaciones(event: Event): void {
+    const sendTime = (event.target as HTMLInputElement).value;
+    if (!sendTime || this.autoNotifSaving()) return;
+    this.autoNotifSaving.set(true);
+    this.autoNotifError.set('');
+    this.statsService.setAutoNotificationEnabled(this.autoNotif30Dias(), this.autoNotifVenceHoy(), sendTime).subscribe({
+      next: (res) => {
+        this.autoNotifSendTime.set(res.sendTime);
+        this.autoNotifSaving.set(false);
+      },
+      error: () => {
+        this.autoNotifError.set('No se pudo actualizar la hora de envío. Intenta nuevamente.');
+        this.autoNotifSaving.set(false);
+      },
+    });
   }
 
   private cargarEstadoCorreo(): void {
@@ -109,7 +175,7 @@ export class Configuracion implements OnInit {
     this.testEmailSending.set(true);
     this.testEmailResult.set('');
     this.testEmailError.set('');
-    this.statsService.sendTestEmail(to).subscribe({
+    this.statsService.sendTestEmail(to, this.testEmailType).subscribe({
       next: () => {
         this.testEmailResult.set(`Correo de prueba enviado a ${to}.`);
         this.testEmailSending.set(false);

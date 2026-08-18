@@ -95,7 +95,11 @@
       }
     </div>
     <div class="card-footer">
-      <span class="record-count">{{ total() }} sepultura(s) en total</span>
+      @if (loading()) {
+        <span class="record-count record-count-loading">Cargando sepulturas…</span>
+      } @else {
+        <span class="record-count">{{ total() }} sepultura(s) en total</span>
+      }
       @if (totalPages() > 1) {
         <div class="pagination">
           <button class="pag-btn pag-nav" (click)="changePage(1)" [disabled]="page() === 1 || loading()" title="Primera">

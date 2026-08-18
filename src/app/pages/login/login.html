@@ -15,7 +15,7 @@
   </div>
 
   <!-- Panel derecho: Formulario -->
-  <div class="login-form-panel">
+  <div class="login-form-panel" [class.login-form-panel-busy]="auth.loading() || isLoading()">
     <div class="login-form-content">
 
       <div class="form-header">
@@ -26,15 +26,24 @@
       <button
         class="btn-microsoft"
         (click)="login()"
-        [disabled]="isLoading()"
+        [disabled]="auth.loading() || isLoading()"
+        [attr.aria-busy]="auth.loading() || isLoading()"
       >
-        <img class="microsoft-icon" src="logos/microsoft.svg" alt="Microsoft logo" width="20" height="20" />
-        @if (isLoading()) {
-          <span>Conectando...</span>
+        @if (auth.loading() || isLoading()) {
+          <span class="loading-spinner" aria-hidden="true"></span>
+          <span>{{ auth.loading() ? 'Verificando sesión...' : 'Conectando con Microsoft...' }}</span>
         } @else {
+          <img class="microsoft-icon" src="logos/microsoft.svg" alt="Microsoft logo" width="20" height="20" />
           <span>Iniciar sesión con Microsoft</span>
         }
       </button>
+
+      @if (auth.loading() || isLoading()) {
+        <div class="login-progress" role="status" aria-live="polite">
+          <span class="progress-dot"></span>
+          <span>{{ auth.loading() ? 'Comprobando tu sesión segura' : 'Serás redirigido a Microsoft para autenticarte' }}</span>
+        </div>
+      }
 
       @if (authError() === 'SIN_ROL') {
         <div class="login-sin-rol">

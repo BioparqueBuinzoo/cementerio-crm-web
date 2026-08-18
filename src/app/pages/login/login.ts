@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth/auth.service';
 })
 export class Login implements OnInit {
   // CAMBIO: inject() en lugar de constructor — patrón moderno Angular 14+
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
 
   // CAMBIO: propiedades mutables → Signals

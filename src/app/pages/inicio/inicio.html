@@ -55,40 +55,70 @@
         <h2>Estado de contratos</h2>
       </div>
 
-      <div class="contratos-chips">
-        <a routerLink="/asis/contratos-por-vencer" class="contrato-chip contrato-chip-warning">
-          <div class="chip-icon"><re-icon name="clock" width="20" height="20"></re-icon></div>
-          <div class="chip-info">
-            <span class="chip-value">{{ pvTotal }}</span>
-            <span class="chip-label">Por vencer</span>
-            <span class="chip-sub">Próximos 30 días</span>
-          </div>
-        </a>
-        <a routerLink="/asis/contratos-vencidos" class="contrato-chip contrato-chip-danger">
-          <div class="chip-icon"><re-icon name="alert" width="20" height="20"></re-icon></div>
-          <div class="chip-info">
-            <span class="chip-value">{{ vdTotal }}</span>
-            <span class="chip-label">Vencidos</span>
-            <span class="chip-sub">Requieren renovación</span>
-          </div>
-        </a>
-      </div>
+      @if (contratosLoading()) {
+        <div class="contratos-chips">
+          @for (i of [0,1,2]; track i) {
+            <div class="contrato-chip contrato-chip-skeleton">
+              <div class="chip-icon chip-icon-skeleton"></div>
+              <div class="chip-info">
+                <span class="chip-value-skeleton"></span>
+                <span class="chip-label-skeleton"></span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="distribucion">
+          <span class="distribucion-label">Distribución de contratos</span>
+          <div class="distribucion-bar distribucion-bar-skeleton"></div>
+        </div>
+      } @else {
+        <div class="contratos-chips">
+          <a routerLink="/asis/contratos-activos" class="contrato-chip contrato-chip-ok">
+            <div class="chip-icon"><re-icon name="check-circle" width="20" height="20"></re-icon></div>
+            <div class="chip-info">
+              <span class="chip-value">{{ activosTotal }}</span>
+              <span class="chip-label">Activos</span>
+              <span class="chip-sub">Vigencia mayor a 30 días</span>
+            </div>
+          </a>
+          <a routerLink="/asis/contratos-por-vencer" class="contrato-chip contrato-chip-warning">
+            <div class="chip-icon"><re-icon name="clock" width="20" height="20"></re-icon></div>
+            <div class="chip-info">
+              <span class="chip-value">{{ pvTotal }}</span>
+              <span class="chip-label">Por vencer</span>
+              <span class="chip-sub">Próximos 30 días</span>
+            </div>
+          </a>
+          <a routerLink="/asis/contratos-vencidos" class="contrato-chip contrato-chip-danger">
+            <div class="chip-icon"><re-icon name="alert" width="20" height="20"></re-icon></div>
+            <div class="chip-info">
+              <span class="chip-value">{{ vdTotal }}</span>
+              <span class="chip-label">Vencidos</span>
+              <span class="chip-sub">Requieren renovación</span>
+            </div>
+          </a>
+        </div>
 
-      <div class="distribucion">
-        <span class="distribucion-label">Distribución de contratos</span>
-        <div class="distribucion-bar">
-          @if (pvPercent > 0) {
-            <div class="distribucion-seg distribucion-seg-warning" [style.width.%]="pvPercent">{{ pvTotal }} ({{ pvPercent }}%)</div>
-          }
-          @if (vdPercent > 0) {
-            <div class="distribucion-seg distribucion-seg-danger" [style.width.%]="vdPercent">{{ vdTotal }} ({{ vdPercent }}%)</div>
-          }
+        <div class="distribucion">
+          <span class="distribucion-label">Distribución de contratos</span>
+          <div class="distribucion-bar">
+            @if (activosPercent > 0) {
+              <div class="distribucion-seg distribucion-seg-ok" [style.width.%]="activosPercent">{{ activosTotal }} ({{ activosPercent }}%)</div>
+            }
+            @if (pvPercent > 0) {
+              <div class="distribucion-seg distribucion-seg-warning" [style.width.%]="pvPercent">{{ pvTotal }} ({{ pvPercent }}%)</div>
+            }
+            @if (vdPercent > 0) {
+              <div class="distribucion-seg distribucion-seg-danger" [style.width.%]="vdPercent">{{ vdTotal }} ({{ vdPercent }}%)</div>
+            }
+          </div>
+          <div class="distribucion-legend">
+            <span><i class="dist-dot dist-dot-ok"></i>Activos ({{ activosPercent }}%)</span>
+            <span><i class="dist-dot dist-dot-warning"></i>Por vencer</span>
+            <span><i class="dist-dot dist-dot-danger"></i>Vencidos</span>
+          </div>
         </div>
-        <div class="distribucion-legend">
-          <span><i class="dist-dot dist-dot-warning"></i>Por vencer</span>
-          <span><i class="dist-dot dist-dot-danger"></i>Vencidos</span>
-        </div>
-      </div>
+      }
 
       <a routerLink="/asis/contratos-por-vencer" class="panel-footer-link">
         Ver contratos <re-icon name="arrow-right" width="13" height="13"></re-icon>

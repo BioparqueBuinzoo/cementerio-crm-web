@@ -100,6 +100,13 @@
           @if (vencidosCount() > 0) { <span class="nav-badge nav-badge-danger">{{ vencidosCount() }}</span> }
         }
       </a>
+      <!-- CONTRATOS ONLINE -->
+      <a routerLink="/asis/contratos-online" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">
+        <span class="nav-icon">
+          <re-icon name="envelope" width="20" height="20"></re-icon>
+        </span>
+        @if (isSidebarOpen()) { <span class="nav-text">ONLINE</span> }
+      </a>
       @if (isSidebarOpen()) { <span class="nav-section-label">Administración</span> }
       <!-- CONFIGURACION -->
       <a routerLink="/asis/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebarOnMobile()">

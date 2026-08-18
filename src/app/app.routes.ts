@@ -48,6 +48,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/contratos-activos/contratos-activos').then(m => m.ContratosActivos),
       },
       {
+        path: 'contratos-online',
+        canActivate: [authGuard],
+        loadComponent: () => import('./pages/contratos-online/contratos-online').then(m => m.ContratosOnline),
+      },
+      {
         path: 'configuracion',
         canActivate: [authGuard],
         loadComponent: () => import('./pages/configuracion/configuracion').then(m => m.Configuracion),

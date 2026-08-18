@@ -45,6 +45,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
   activeBatch: NotificationBatch | null = null;
 
   totalAmount = 0;
+  overviewLoading = true;
 
   ngOnInit(): void {
     this.load(1);
@@ -81,6 +82,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
         this.page = res.page;
         this.totalPages = res.totalPages;
         this.loading = false;
+        this.overviewLoading = false;
         this.cdr.markForCheck();
       },
     });
@@ -141,7 +143,9 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
     }
   }
 
-  private watchBatch(batch: NotificationBatch): void {
+  private static readonly MAX_BATCH_POLL_RETRIES = 5;
+
+  private watchBatch(batch: NotificationBatch, failedAttempts = 0): void {
     this.activeBatch = batch;
     this.clearBatchTimer();
     if (batch.status === 'completed' || batch.status === 'completed_with_errors') return;
@@ -160,6 +164,12 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
         this.cdr.markForCheck();
         this.watchBatch(updated);
       } catch (error) {
+        // Reintenta ante un error transitorio (red, backend momentáneamente caído) en vez
+        // de abandonar el seguimiento de un envío que puede seguir en curso.
+        if (failedAttempts < ContratosVencimientos.MAX_BATCH_POLL_RETRIES) {
+          this.watchBatch(batch, failedAttempts + 1);
+          return;
+        }
         this.notificationError = this.errorMessage(error);
         this.cdr.markForCheck();
       }

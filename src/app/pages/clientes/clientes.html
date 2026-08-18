@@ -121,9 +121,11 @@
 
         <!-- ── Card footer: record count + pagination ── -->
         <div class="card-footer">
-          <span class="record-count">
-            {{ displayedClientes().length }} de {{ total() }} cliente(s)
-          </span>
+          @if (loading()) {
+            <span class="record-count record-count-loading">Cargando clientes…</span>
+          } @else {
+            <span class="record-count">{{ displayedClientes().length }} de {{ total() }} cliente(s)</span>
+          }
           <div class="pagination">
             <!-- Primera página -->
             <button (click)="changePage(1)" [disabled]="page() === 1 || loading()" class="pag-btn pag-nav" title="Primera página">

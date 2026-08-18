@@ -46,13 +46,46 @@ export interface VencimientosPaginados {
   totalPages: number;
 }
 
+export interface ContratoOnlineItem {
+  id_pago: number;
+  id_sepultura: number;
+  numero_ficha: string;
+  tipo: string;
+  id_cliente: number;
+  nombre_cliente: string;
+  fecha_pago: string;
+  fecha_vencimiento_nueva: string;
+  monto_pagado: number;
+  numero_comprobante: string;
+  commerce_order: string;
+}
+
+export interface ContratosOnlinePaginados {
+  data: ContratoOnlineItem[];
+  total: number;
+  totalAmount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export type NotificationType = 'por-vencer' | 'vencidas';
+export type TestNotificationType = 'por-vencer' | 'vence-hoy';
 
 export interface NotificationSummary {
   sepulturas: number;
   destinatarios: number;
   omitidasSinEmailValido: number;
   smtpConfigured: boolean;
+}
+
+export interface AutoNotificationSettings {
+  enabled30Dias: boolean;
+  enabledVenceHoy: boolean;
+  sendTime: string;
+  lastRunDate: string | null;
+  updatedBy: string | null;
+  updatedAt: string;
 }
 
 export interface NotificationBatch {
@@ -77,11 +110,16 @@ export class DashboardStatsService {
   private readonly url = `${environment.apiUrl}/api/stats`;
   private cachedStats: DashboardStats | null = null;
 
-  readonly loading = signal(false);
+  // Arranca en carga para que la primera renderización no muestre los valores
+  // iniciales en cero antes de que comience la petición HTTP.
+  readonly loading = signal(true);
   readonly loadingVencimientos = signal(false);
 
   loadIfNeeded(): Observable<DashboardStats> {
-    if (this.cachedStats !== null) return of(this.cachedStats);
+    if (this.cachedStats !== null) {
+      this.loading.set(false);
+      return of(this.cachedStats);
+    }
     this.loading.set(true);
     return this.http.get<DashboardStats>(this.url).pipe(
       tap(data => { this.cachedStats = data; this.loading.set(false); }),
@@ -99,10 +137,30 @@ export class DashboardStatsService {
     );
   }
 
+  getContratosOnline(page: number, limit: number): Observable<ContratosOnlinePaginados> {
+    return this.http.get<ContratosOnlinePaginados>(
+      `${this.url}/contratos-online?page=${page}&limit=${limit}`
+    ).pipe(
+      catchError(() => of({ data: [], total: 0, totalAmount: 0, page: 1, limit, totalPages: 0 })),
+    );
+  }
+
+  exportContratosOnline(): Observable<Blob> {
+    return this.http.get(`${this.url}/contratos-online/export`, { responseType: 'blob' });
+  }
+
   getNotificationStatus(): Observable<{ smtpConfigured: boolean; cooldownHours: number }> {
     return this.http.get<{ smtpConfigured: boolean; cooldownHours: number }>(
       `${this.url}/vencimientos/notificaciones/estado`,
     );
+  }
+
+  getAutoNotificationSettings(): Observable<AutoNotificationSettings> {
+    return this.http.get<AutoNotificationSettings>(`${this.url}/vencimientos/notificaciones/auto`);
+  }
+
+  setAutoNotificationEnabled(enabled30Dias: boolean, enabledVenceHoy: boolean, sendTime: string): Observable<AutoNotificationSettings> {
+    return this.http.put<AutoNotificationSettings>(`${this.url}/vencimientos/notificaciones/auto`, { enabled30Dias, enabledVenceHoy, sendTime });
   }
 
   notificationSummary(tipo: NotificationType): Observable<NotificationSummary> {
@@ -140,9 +198,9 @@ export class DashboardStatsService {
     );
   }
 
-  getNotificationPreview(): Observable<{ subject: string; html: string }> {
+  getNotificationPreview(tipo = 'vence-hoy'): Observable<{ subject: string; html: string }> {
     return this.http.get<{ subject: string; html: string }>(
-      `${this.url}/vencimientos/notificaciones/vista-previa`,
+      `${this.url}/vencimientos/notificaciones/vista-previa?tipo=${tipo}`,
     );
   }
 
@@ -152,10 +210,10 @@ export class DashboardStatsService {
     );
   }
 
-  sendTestEmail(to: string): Observable<{ messageId: string; to: string }> {
+  sendTestEmail(to: string, notificationType: TestNotificationType = 'vence-hoy'): Observable<{ messageId: string; to: string }> {
     return this.http.post<{ messageId: string; to: string }>(
       `${this.url}/vencimientos/notificaciones/prueba`,
-      { to },
+      { to, notificationType },
     );
   }
 

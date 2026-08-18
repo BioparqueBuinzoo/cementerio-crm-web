@@ -225,18 +225,36 @@ export class Inicio implements OnInit {
     { label: 'Contratos activos', value: 0, icon: 'file-text', route: '/asis/contratos-activos' as string | null, hint: 'Contratos vigentes' },
   ];
 
-  // Estado de contratos (por vencer / vencidos)
+  // Estado de contratos (activos vigentes / por vencer / vencidos)
+  // "Activos" aquí es el subconjunto de contratosActivos que NO está por vencer
+  // (vence en más de 30 días) — así los tres segmentos no se solapan y suman el total general.
   pvTotal = 0;
   vdTotal = 0;
+  activosTotal = 0;
+
+  // true hasta que las dos fuentes (stats + vencidas) respondan — evita que el
+  // usuario vea los números pasar de 0 al valor real (skeleton en su lugar).
+  readonly contratosLoading = signal(true);
+  private statsLoaded = false;
+  private vencidasLoaded = false;
+
+  private get totalGeneral(): number {
+    return this.pvTotal + this.vdTotal + this.activosTotal;
+  }
 
   get pvPercent(): number {
-    const total = this.pvTotal + this.vdTotal;
+    const total = this.totalGeneral;
     return total > 0 ? Math.round((this.pvTotal / total) * 100) : 0;
   }
 
   get vdPercent(): number {
-    const total = this.pvTotal + this.vdTotal;
-    return total > 0 ? 100 - this.pvPercent : 0;
+    const total = this.totalGeneral;
+    return total > 0 ? Math.round((this.vdTotal / total) * 100) : 0;
+  }
+
+  get activosPercent(): number {
+    const total = this.totalGeneral;
+    return total > 0 ? Math.max(0, 100 - this.pvPercent - this.vdPercent) : 0;
   }
 
   // Actividad reciente
@@ -256,6 +274,9 @@ export class Inicio implements OnInit {
         this.stats[2].value = res.totalMascotas;
         this.stats[3].value = res.contratosActivos;
         this.pvTotal = res.porVencer;
+        this.activosTotal = Math.max(0, res.contratosActivos - res.porVencer);
+        this.statsLoaded = true;
+        this.checkContratosLoaded();
         this.cdr.markForCheck();
       },
     });
@@ -263,10 +284,16 @@ export class Inicio implements OnInit {
     this.cargarActividad();
   }
 
+  private checkContratosLoaded(): void {
+    if (this.statsLoaded && this.vencidasLoaded) this.contratosLoading.set(false);
+  }
+
   private loadVencidasTotal(): void {
     this.statsService.loadVencimientos('vencidas', 1, 1).subscribe({
       next: res => {
         this.vdTotal = res.total;
+        this.vencidasLoaded = true;
+        this.checkContratosLoaded();
         this.cdr.markForCheck();
       },
     });
@@ -352,6 +379,7 @@ export class Inicio implements OnInit {
     this.errorMsg = '';
     try {
       const id = await this.clienteService.create(this.form);
+      this.statsService.invalidate();
       this.modalVisible = false;
       this.router.navigate(['/asis/clientes', id]);
     } catch (e: any) {

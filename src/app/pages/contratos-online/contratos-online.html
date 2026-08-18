@@ -3,7 +3,7 @@
     <div class="toolbar-title">
       <div>
         <span class="eyebrow">GESTIÓN DE CONTRATOS</span>
-        <h1>Contratos activos</h1>
+        <h1>Contratos online</h1>
       </div>
     </div>
     <button class="btn-export" type="button" (click)="exportar()" [disabled]="exportando" title="Exportar listado a Excel">
@@ -12,21 +12,21 @@
     </button>
   </div>
 
-  <section class="venc-overview" aria-label="Resumen de contratos activos">
+  <section class="venc-overview" aria-label="Resumen de contratos pagados por el portal de pagos">
     <article class="overview-card overview-card-primary">
-      <div class="overview-icon"><re-icon name="file-text" width="22" height="22"></re-icon></div>
+      <div class="overview-icon"><re-icon name="envelope" width="22" height="22"></re-icon></div>
       <div class="overview-copy">
-        <span class="overview-label">Contratos activos</span>
+        <span class="overview-label">Renovaciones online</span>
         @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ total }}</strong> }
-        <small>Vigentes al día de hoy</small>
+        <small>Pagadas por el portal de pagos</small>
       </div>
     </article>
     <article class="overview-card overview-card-amount">
       <div class="overview-icon"><re-icon name="file-text" width="22" height="22"></re-icon></div>
       <div class="overview-copy">
-        <span class="overview-label">Monto total vigente</span>
+        <span class="overview-label">Monto total recaudado</span>
         @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ formatCurrency(totalAmount) }}</strong> }
-        <small>Valor de renovación registrado</small>
+        <small>Incluye recargos por mora</small>
       </div>
     </article>
   </section>
@@ -40,19 +40,20 @@
         <thead>
           <tr>
             <th>#</th><th>Ficha</th><th>Cliente</th><th>Tipo</th>
-            <th>Vence</th><th>Días</th><th>Monto renovación</th><th>Ficha</th>
+            <th>Fecha de pago</th><th>Nuevo vencimiento</th><th>Monto pagado</th><th>Comprobante</th><th>Ficha</th>
           </tr>
         </thead>
         <tbody>
-          @for (item of data; track item.id_sepultura) {
+          @for (item of data; track item.id_pago) {
             <tr class="row-clickable" (dblclick)="goToClient(item.id_cliente)">
               <td class="col-num">{{ (page - 1) * limit + $index + 1 }}</td>
               <td class="col-ficha">#{{ item.numero_ficha }}</td>
               <td class="col-nombre">{{ item.nombre_cliente }}</td>
               <td>{{ item.tipo }}</td>
-              <td>{{ formatDate(item.fecha_vencimiento) }}</td>
-              <td><span class="dias-badge dias-neutral">{{ formatDays(item.dias_restantes) }}</span></td>
-              <td class="col-amount">{{ formatCurrency(item.valor_renovacion) }}</td>
+              <td>{{ formatDate(item.fecha_pago) }}</td>
+              <td>{{ formatDate(item.fecha_vencimiento_nueva) }}</td>
+              <td class="col-amount">{{ formatCurrency(item.monto_pagado) }}</td>
+              <td>{{ item.numero_comprobante }}</td>
               <td class="col-action">
                 <a [routerLink]="['/asis/clientes', item.id_cliente]" class="btn-ficha" title="Ver ficha del cliente" (click)="$event.stopPropagation()">
                   <re-icon name="arrow-right" width="14" height="14"></re-icon>
@@ -61,10 +62,10 @@
             </tr>
           } @empty {
             @if (!loading) {
-              <tr><td colspan="8" class="empty-row">
-                <re-icon name="file-text" width="34" height="34"></re-icon>
-                <strong>No hay contratos activos</strong>
-                <span>No se encontraron contratos vigentes.</span>
+              <tr><td colspan="9" class="empty-row">
+                <re-icon name="envelope" width="34" height="34"></re-icon>
+                <strong>Sin renovaciones online todavía</strong>
+                <span>Las renovaciones pagadas por el portal de pagos aparecerán aquí.</span>
               </td></tr>
             }
           }
@@ -73,7 +74,7 @@
     </div>
 
     <div class="card-footer">
-      <span class="record-count">{{ total }} contrato(s)</span>
+      <span class="record-count">{{ total }} renovación(es)</span>
       @if (totalPages > 1) {
         <div class="pagination">
           <button class="pag-btn pag-nav" (click)="load(1)" [disabled]="page === 1 || loading" title="Primera">«</button>
