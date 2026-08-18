@@ -1,0 +1,15 @@
+@import '../configuracion/configuracion.css';
+
+.role-apply-btn {
+  margin-left: 6px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--color-primary-dark, #2d6a4f);
+  font: 700 .7rem inherit;
+  cursor: pointer;
+}
+
+.role-apply-btn:hover:not(:disabled) { background: var(--color-primary-deeper, #1b4332); }
+.role-apply-btn:disabled { opacity: .55; cursor: not-allowed; }

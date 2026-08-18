@@ -8,222 +8,34 @@
     </div>
   </div>
 
-  <!-- ── Configuración de correo ────────────────────────── -->
-  <section class="config-card">
-    <div class="config-card-header">
-      <re-icon name="mail" width="20" height="20"></re-icon>
-      <h2>Configuración de correo</h2>
-    </div>
-
-    @if (loadingCorreo()) {
-      <div class="config-card-body">
-        <p class="config-muted">Cargando estado…</p>
+  <div class="config-menu">
+    <a routerLink="/asis/configuracion/correo" class="config-menu-card">
+      <div class="config-menu-card-top">
+        <div class="config-menu-icon">
+          <re-icon name="mail" width="26" height="26"></re-icon>
+        </div>
+        <re-icon name="chevron-right" class="config-menu-arrow" width="18" height="18"></re-icon>
       </div>
-    } @else if (correoError()) {
-      <div class="config-card-body">
-        <p class="config-error">{{ correoError() }}</p>
+      <div class="config-menu-copy">
+        <h2>Configuración de correo</h2>
+        <p>Estado SMTP, vista previa del correo y notificaciones automáticas de vencimiento.</p>
       </div>
-    } @else {
-      <div class="config-card-body email-config-body">
-        @if (!smtpConfigured()) {
-          <p class="config-hint config-hint-warning">
-            El envío de correos de renovación (por vencer / vencidas) está deshabilitado hasta que se configure el servidor SMTP en el backend.
-          </p>
-        }
+    </a>
 
-        <div class="email-layout">
-          <div class="email-main">
-
-            <h3 class="email-section-title">Vista previa (datos de ejemplo)</h3>
-            @if (previewLoading()) {
-              <p class="config-muted">Generando vista previa…</p>
-            } @else if (previewError()) {
-              <p class="config-error">{{ previewError() }}</p>
-            } @else if (previewHtml()) {
-              <div class="email-preview-frame-wrap">
-                <iframe class="email-preview-frame" [srcdoc]="previewHtml()" title="Vista previa del correo de renovación" sandbox=""></iframe>
-              </div>
-            }
-
+    @if (auth.isAdmin()) {
+      <a routerLink="/asis/configuracion/usuarios" class="config-menu-card">
+        <div class="config-menu-card-top">
+          <div class="config-menu-icon">
+            <re-icon name="users-alt" width="26" height="26"></re-icon>
           </div>
-
-          <div class="email-side">
-            <h3 class="email-section-title">Enviar correo de prueba</h3>
-             <p class="config-muted">Envía el correo de ejemplo a una dirección propia para revisar el diseño.</p>
-             <div class="test-email-form">
-               <label class="test-email-label" for="test-email-type">Tipo de correo</label>
-               <select id="test-email-type" class="test-email-select" [(ngModel)]="testEmailType">
-                 <option value="por-vencer">Por vencer (30 días)</option>
-                 <option value="vence-hoy">Vence hoy / Paga hoy</option>
-               </select>
-               <label class="test-email-label" for="test-email-to">Correo de destino</label>
-               <input
-                 id="test-email-to"
-                 type="email"
-                class="test-email-input"
-                [(ngModel)]="testEmailTo"
-                placeholder="tu-correo@ejemplo.cl"
-                (keydown.enter)="enviarCorreoPrueba()"
-              />
-              <button
-                type="button"
-                class="btn-primary"
-                (click)="enviarCorreoPrueba()"
-                [disabled]="testEmailSending() || !testEmailTo.trim() || !smtpConfigured()"
-              >
-                {{ testEmailSending() ? 'Enviando…' : 'Enviar correo de prueba' }}
-              </button>
-              @if (testEmailResult()) { <p class="config-hint">{{ testEmailResult() }}</p> }
-              @if (testEmailError()) { <p class="config-error">{{ testEmailError() }}</p> }
-            </div>
-
-            <div class="side-divider"></div>
-            <h3 class="email-section-title">Última notificación masiva enviada</h3>
-            @if (latestBatchLoading()) {
-              <p class="config-muted">Cargando…</p>
-            } @else if (latestBatchError()) {
-              <p class="config-error">{{ latestBatchError() }}</p>
-            } @else if (latestBatch(); as batch) {
-              <div class="batch-summary">
-                <span class="batch-chip">{{ batch.notificationType === 'por-vencer' ? 'Por vencer' : 'Vencidas' }}</span>
-                <span>{{ formatFechaHora(batch.createdAt) }}</span>
-                <span class="status-badge" [class.status-ok]="batch.status === 'completed'" [class.status-off]="batch.status !== 'completed'">
-                  {{ batch.status }}
-                </span>
-                <span>{{ batch.sentCount }} / {{ batch.recipientCount }} enviados</span>
-                @if (batch.failedCount > 0) { <span class="config-error">{{ batch.failedCount }} fallidos</span> }
-              </div>
-            } @else {
-              <p class="config-muted">Aún no se ha enviado ninguna notificación masiva.</p>
-            }
-
-            <div class="side-divider"></div>
-            <div class="section-heading-row">
-              <div>
-                <h3 class="email-section-title">Notificaciones automáticas</h3>
-                <p class="section-description">Elige qué recordatorios debe enviar el sistema sin intervención manual.</p>
-              </div>
-              <span class="automation-count">2 reglas</span>
-            </div>
-            <div class="auto-send-time">
-              <div>
-                <strong>Hora de envío</strong>
-                <span>Hora local de Chile. El sistema revisa cada hora y nunca envía antes de esta hora.</span>
-              </div>
-              <input type="time" [value]="autoNotifSendTime()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Hora de envío de notificaciones automáticas" (change)="cambiarHoraNotificaciones($event)" />
-            </div>
-            <div class="auto-notif-list">
-              <div class="auto-notif-card">
-                <div class="auto-notif-copy">
-                  <strong>Aviso anticipado</strong>
-                  <span>Enviar 30 días antes del vencimiento.</span>
-                </div>
-                <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
-                  <input type="checkbox" [checked]="autoNotif30Dias()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso automático 30 días antes" (change)="toggleAutoNotificaciones('30Dias')" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                </label>
-                <span class="auto-notif-label">{{ autoNotif30Dias() ? 'Activado' : 'Desactivado' }}</span>
-              </div>
-              <div class="auto-notif-card">
-                <div class="auto-notif-copy">
-                  <strong>Aviso de vencimiento</strong>
-                  <span>Enviar hoy y repetir cada 7 días mientras siga vencido.</span>
-                </div>
-                <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
-                  <input type="checkbox" [checked]="autoNotifVenceHoy()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso el día del vencimiento y cada 7 días" (change)="toggleAutoNotificaciones('VenceHoy')" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                </label>
-                <span class="auto-notif-label">{{ autoNotifVenceHoy() ? 'Activado' : 'Desactivado' }}</span>
-              </div>
-            </div>
-            @if (autoNotifLastRun()) { <small class="config-muted">Último chequeo: {{ autoNotifLastRun() }}</small> }
-            @if (autoNotifError()) { <p class="config-error">{{ autoNotifError() }}</p> }
-          </div>
+          <re-icon name="chevron-right" class="config-menu-arrow" width="18" height="18"></re-icon>
         </div>
-        <div class="email-protection-note">
-          <re-icon name="clock" width="16" height="16"></re-icon>
-          <span><strong>Protección de envíos</strong> {{ cooldownHours() }} horas entre correos al mismo cliente</span>
+        <div class="config-menu-copy">
+          <h2>Usuarios y permisos</h2>
+          <p>Administra qué personas tienen acceso a la plataforma y con qué rol.</p>
         </div>
-      </div>
+      </a>
     }
-  </section>
-
-  <!-- ── Usuarios registrados ──────────────────────────── -->
-  <section class="config-card">
-    <div class="config-card-header">
-      <re-icon name="users-alt" width="20" height="20"></re-icon>
-      <h2>Usuarios registrados en la plataforma</h2>
-    </div>
-
-    @if (!auth.isAdmin()) {
-      <div class="config-card-body">
-        <p class="config-muted">Solo un administrador puede ver el listado de usuarios.</p>
-      </div>
-    } @else if (loadingUsuarios()) {
-      <div class="config-card-body">
-        <p class="config-muted">Cargando usuarios…</p>
-      </div>
-    } @else if (usuariosError()) {
-      <div class="config-card-body">
-        <p class="config-error">{{ usuariosError() }}</p>
-      </div>
-    } @else {
-      @if (userActionError()) {
-        <div class="config-card-body config-card-body-tight">
-          <p class="config-error">{{ userActionError() }}</p>
-        </div>
-      }
-      <div class="config-table-wrap">
-        <table class="config-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Correo</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Último ingreso</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (u of usuarios(); track u.id) {
-              <tr>
-                <td>{{ nombreUsuario(u) }}</td>
-                <td>{{ u.email }}</td>
-                <td>
-                  <select
-                    class="role-select"
-                    [disabled]="savingUserId() === u.id"
-                    [value]="u.roles.length ? u.roles[0] : ''"
-                    (change)="cambiarRol(u, $any($event.target).value)"
-                  >
-                    @if (!u.roles[0]) { <option value="" disabled>Sin rol</option> }
-                    @for (rol of roles(); track rol.code) {
-                      <option [value]="rol.code">{{ rol.name }}</option>
-                    }
-                  </select>
-                </td>
-                <td>
-                  <select
-                    class="status-select"
-                    [class.status-select-active]="u.app_status === 'active'"
-                    [disabled]="savingUserId() === u.id"
-                    [value]="u.app_status"
-                    (change)="cambiarEstado(u, $any($event.target).value)"
-                  >
-                    <option value="active">Activo</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="disabled">Deshabilitado</option>
-                  </select>
-                </td>
-                <td>{{ u.last_login_at ? formatFecha(u.last_login_at) : '—' }}</td>
-              </tr>
-            } @empty {
-              <tr><td colspan="5" class="config-muted">No hay usuarios registrados.</td></tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </section>
+  </div>
 
 </div>

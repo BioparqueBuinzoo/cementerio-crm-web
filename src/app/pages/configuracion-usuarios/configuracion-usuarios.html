@@ -1,0 +1,67 @@
+<div class="config-container">
+  <div class="config-header">
+    <a routerLink="/asis/configuracion" class="header-back-link" aria-label="Volver a Configuración">
+      <re-icon name="chevron-left" width="22" height="22"></re-icon>
+    </a>
+    <re-icon name="users-alt" class="header-brand-icon" width="32" height="32"></re-icon>
+    <div class="title-text">
+      <h1>Usuarios y permisos</h1>
+      <span>Administra roles y acceso a la plataforma</span>
+    </div>
+  </div>
+
+  <nav class="config-subnav">
+    <a routerLink="/asis/configuracion/correo" routerLinkActive="active" class="config-subnav-item">
+      <re-icon name="mail" width="15" height="15"></re-icon> Correo
+    </a>
+    <a routerLink="/asis/configuracion/usuarios" routerLinkActive="active" class="config-subnav-item">
+      <re-icon name="users-alt" width="15" height="15"></re-icon> Usuarios y permisos
+    </a>
+  </nav>
+
+  <section class="config-card">
+    @if (!auth.isAdmin()) {
+      <div class="config-card-body"><p class="config-muted">Solo un administrador puede administrar usuarios.</p></div>
+    } @else if (loadingUsuarios() || !rolesLoaded()) {
+      <div class="config-card-body"><p class="config-muted">Cargando usuarios y roles…</p></div>
+    } @else if (usuariosError()) {
+      <div class="config-card-body"><p class="config-error">{{ usuariosError() }}</p></div>
+    } @else {
+      @if (userActionError()) {
+        <div class="config-card-body config-card-body-tight"><p class="config-error">{{ userActionError() }}</p></div>
+      }
+      <div class="config-table-wrap">
+        <table class="config-table">
+          <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último ingreso</th></tr></thead>
+          <tbody>
+            @for (u of usuarios(); track u.id) {
+              <tr>
+                <td>{{ nombreUsuario(u) }}</td>
+                <td>{{ u.email }}</td>
+                <td>
+                  <select class="role-select" [disabled]="savingUserId() !== null" [ngModel]="pendingRoles()[u.id] || (u.roles.length ? u.roles[0] : '')" (ngModelChange)="cambiarRol(u, $event)">
+                    @if (!u.roles[0]) { <option value="" disabled>Sin rol</option> }
+                    @for (rol of roles(); track rol.code) { <option [value]="rol.code">{{ rol.name }}</option> }
+                  </select>
+                  @if (pendingRoles()[u.id]) {
+                    <button type="button" class="role-apply-btn" [disabled]="savingUserId() !== null" (click)="aplicarRol(u)">
+                      {{ savingUserId() === u.id ? 'Aplicando…' : 'Aplicar' }}
+                    </button>
+                  }
+                </td>
+                <td>
+                  <select class="status-select" [class.status-select-active]="u.app_status === 'active'" [disabled]="savingUserId() === u.id" [ngModel]="u.app_status" (ngModelChange)="cambiarEstado(u, $event)">
+                    <option value="active">Activo</option><option value="pending">Pendiente</option><option value="disabled">Deshabilitado</option>
+                  </select>
+                </td>
+                <td>{{ u.last_login_at ? formatFecha(u.last_login_at) : '—' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="config-muted">No hay usuarios registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

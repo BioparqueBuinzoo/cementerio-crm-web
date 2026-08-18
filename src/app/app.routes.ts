@@ -55,7 +55,11 @@ export const routes: Routes = [
       {
         path: 'configuracion',
         canActivate: [authGuard],
-        loadComponent: () => import('./pages/configuracion/configuracion').then(m => m.Configuracion),
+        children: [
+          { path: '', loadComponent: () => import('./pages/configuracion/configuracion').then(m => m.Configuracion) },
+          { path: 'correo', loadComponent: () => import('./pages/configuracion-correo/configuracion-correo').then(m => m.ConfiguracionCorreo) },
+          { path: 'usuarios', loadComponent: () => import('./pages/configuracion-usuarios/configuracion-usuarios').then(m => m.ConfiguracionUsuarios) },
+        ],
       },
     ],
   },
