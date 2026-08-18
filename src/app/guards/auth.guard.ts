@@ -16,7 +16,10 @@ export const authGuard: CanActivateFn = () => {
   }
 
   // No autenticado: redirigir a login guardando la URL de destino.
+  // Si router.url ya es /login (p.ej. tras un intento de login fallido),
+  // no lo anidamos como returnUrl — eso crea un bucle que nunca vuelve a /asis.
+  const destination = router.url.startsWith('/login') ? '/asis' : router.url;
   return router.createUrlTree(['/login'], {
-    queryParams: { returnUrl: router.url },
+    queryParams: { returnUrl: destination },
   });
 };

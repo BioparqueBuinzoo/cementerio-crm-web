@@ -115,7 +115,8 @@ export class AuthService {
     this._currentUser.set(response.data);
     const requested = sessionStorage.getItem(this.returnUrlKey) ?? '/asis';
     sessionStorage.removeItem(this.returnUrlKey);
-    const safeReturnUrl = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/asis';
+    const isSafe = requested.startsWith('/') && !requested.startsWith('//') && !requested.startsWith('/login');
+    const safeReturnUrl = isSafe ? requested : '/asis';
     await this.router.navigateByUrl(safeReturnUrl);
   }
 
