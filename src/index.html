@@ -6,8 +6,41 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/svg+xml" href="logos/logo-parque-asis.svg">
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #f4f8f5; }
+    .bootstrap-loading {
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      color: #1b4332;
+      background: radial-gradient(circle at 50% 20%, #ffffff 0, #f4f8f5 55%, #e9f1eb 100%);
+      font: 600 14px/1.4 Arial, sans-serif;
+    }
+    .bootstrap-loading-mark {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 3px solid rgba(45, 106, 79, .18);
+      border-top-color: #2d6a4f;
+      border-radius: 50%;
+      animation: bootstrap-spin .8s linear infinite;
+    }
+    .bootstrap-loading small { color: #6b7d70; font-weight: 400; }
+    @keyframes bootstrap-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .bootstrap-loading-mark { animation: none; } }
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <div class="bootstrap-loading" role="status" aria-live="polite">
+      <span class="bootstrap-loading-mark" aria-hidden="true"></span>
+      <span>Validando tu sesión…</span>
+      <small>Un momento, estamos preparando tu espacio de trabajo.</small>
+    </div>
+  </app-root>
 </body>
 </html>

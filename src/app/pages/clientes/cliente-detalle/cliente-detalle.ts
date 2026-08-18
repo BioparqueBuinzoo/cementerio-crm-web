@@ -18,7 +18,7 @@ import { ContactoService } from '../../../services/contacto/contacto.service';
 import { ObservacionClienteService, ObservacionCliente } from '../../../services/observacion-cliente/observacion-cliente.service';
 import { AuthService } from '../../../services/auth/auth.service';
 import { DashboardStatsService, NotificationType } from '../../../services/dashboard-stats/dashboard-stats.service';
-import { surchargeAmount, nextAmount } from '../../../lib/renewal';
+import { surchargeAmount, nextAmount, roundCashTotalChile } from '../../../lib/renewal';
 import { validate, format, clean } from 'rut.js';
 
 export interface SepulturaConDatos extends Sepultura {
@@ -509,12 +509,17 @@ export class ClienteDetalle {
     return [c.nombre, c.apellido1, c.apellido2].filter(Boolean).join(' ');
   }
 
-  formatCLP(value: number): string {
+  formatCLP(value: number, decimals = 0): string {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
-      minimumFractionDigits: 0,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }).format(value);
+  }
+
+  formatMontoRenovacion(value: number): string {
+    return this.formatCLP(value);
   }
 
   esVencido(fecha: string): boolean {
@@ -564,6 +569,20 @@ export class ClienteDetalle {
 
   get recargoRenovacion(): number {
     return surchargeAmount(this.montoBaseRenovacion);
+  }
+
+  get montoTotalRenovacion(): number {
+    const total = this.montoBaseRenovacion + surchargeAmount(this.montoBaseRenovacion);
+    return this.esPagoEfectivo() ? roundCashTotalChile(total) : total;
+  }
+
+  private esPagoEfectivo(): boolean {
+    return this.contratoForm.forma_pago.trim().toLocaleLowerCase('es-CL').includes('efectivo');
+  }
+
+  onFormaPagoRenovacionChange(formaPago: string): void {
+    this.contratoForm.forma_pago = formaPago;
+    this.montoContratoStr = this.montoBaseRenovacion > 0 ? this.formatMontoRenovacion(this.montoTotalRenovacion) : '';
   }
 
   puedeRenovarContrato(contratos: Contrato[]): boolean {
@@ -631,6 +650,7 @@ export class ClienteDetalle {
       const formas = await this.lookupService.getFormasPago();
       this.formasPago = formas;
       this.contratoForm.forma_pago = formas[0]?.nombre ?? '';
+      this.montoContratoStr = montoSugerido > 0 ? this.formatMontoRenovacion(this.montoTotalRenovacion) : '';
     } catch (e: any) {
       this.contratoErrorMsg = e?.error?.error ?? 'Error al cargar los datos del formulario';
     } finally {
@@ -676,7 +696,7 @@ export class ClienteDetalle {
       const fechaPago = this.fechaLocalISO();
       this.contratoForm.fecha_pago = fechaPago;
       this.onFechaPagoChange(fechaPago);
-      this.contratoForm.valor_renovacion = this.montoBaseRenovacion + this.recargoRenovacion;
+      this.contratoForm.valor_renovacion = this.montoTotalRenovacion;
     }
     if (!this.contratoForm.fecha_pago || !this.contratoForm.fecha_vencimiento || !this.contratoForm.valor_renovacion) return;
     this.savingContrato = true;

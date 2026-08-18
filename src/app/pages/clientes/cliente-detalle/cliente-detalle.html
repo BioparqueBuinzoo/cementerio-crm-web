@@ -526,7 +526,7 @@
                 </div>
                 <div class="form-field">
                   <label>Medio de pago *</label>
-                  <select [(ngModel)]="contratoForm['forma_pago']">
+                  <select [ngModel]="contratoForm['forma_pago']" (ngModelChange)="onFormaPagoRenovacionChange($event)">
                     @for (f of formasPago; track f.id) {
                       <option [value]="f.nombre">{{ f.nombre }}</option>
                     }
