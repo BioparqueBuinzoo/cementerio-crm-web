@@ -8,19 +8,6 @@
       </div>
     </div>
     <div class="clientes-actions">
-      <div class="rut-search-group">
-        <div class="clientes-search">
-          <re-icon name="search" class="search-icon" width="20" height="20"></re-icon>
-          <input class="search-input" type="text" placeholder="RUT o nombre completo…"
-            [value]="buscarInput()"
-            (input)="onBuscarInput($any($event.target).value)"
-            (keydown)="onKeydown($event)" />
-        </div>
-        <button class="btn-search" (click)="buscar()">Buscar</button>
-        @if (buscarInput()) {
-          <button class="btn-clear" (click)="limpiar()" title="Limpiar búsqueda">✕</button>
-        }
-      </div>
       <button class="btn-export" (click)="exportar()" [disabled]="exportando" title="Exportar listado a Excel">
         <re-icon name="download" width="14" height="14"></re-icon>
         {{ exportando ? 'Descargando…' : 'Exportar Excel' }}
@@ -31,23 +18,37 @@
     </div>
   </div>
 
-  @if (filtersOpen()) {
-    <div class="filters-panel">
-      <div class="filter-field">
-        <label for="cliente-email-filter">Contacto por email</label>
-        <select id="cliente-email-filter" [value]="emailEstado()" (change)="emailEstado.set($any($event.target).value); applyFilters()">
-          <option value="todos">Todos los clientes</option>
-          <option value="con-email">Con email registrado</option>
-          <option value="sin-email">Sin email registrado</option>
-        </select>
+  <div class="filters-panel">
+    <div class="filter-field filter-field-search">
+      <label for="cliente-search">RUT o nombre</label>
+      <div class="rut-search-group">
+        <div class="clientes-search">
+          <re-icon name="search" class="search-icon" width="16" height="16"></re-icon>
+          <input id="cliente-search" class="search-input" type="text" placeholder="RUT o nombre completo…"
+            [value]="buscarInput()"
+            (input)="onBuscarInput($any($event.target).value)"
+            (keydown)="onKeydown($event)" />
+        </div>
+        <button class="btn-search" (click)="buscar()">Buscar</button>
+        @if (buscarInput()) {
+          <button class="btn-clear" (click)="limpiar()" title="Limpiar búsqueda">✕</button>
+        }
       </div>
-      <div class="filter-field filter-field-wide">
-        <label for="cliente-comuna-filter">Comuna</label>
-        <input id="cliente-comuna-filter" type="text" placeholder="Ej: Buin" [value]="comunaFilter()" (input)="comunaFilter.set($any($event.target).value)" (keydown.enter)="applyFilters()">
-      </div>
-      <button class="filter-clear" (click)="clearFilters()">Limpiar filtros</button>
     </div>
-  }
+    <div class="filter-field">
+      <label for="cliente-email-filter">Contacto por email</label>
+      <select id="cliente-email-filter" [value]="emailEstado()" (change)="emailEstado.set($any($event.target).value); applyFilters()">
+        <option value="todos">Todos los clientes</option>
+        <option value="con-email">Con email registrado</option>
+        <option value="sin-email">Sin email registrado</option>
+      </select>
+    </div>
+    <div class="filter-field filter-field-wide">
+      <label for="cliente-comuna-filter">Comuna</label>
+      <input id="cliente-comuna-filter" type="text" placeholder="Ej: Buin" [value]="comunaFilter()" (input)="comunaFilter.set($any($event.target).value)" (keydown.enter)="applyFilters()">
+    </div>
+    <button class="filter-clear" (click)="clearFilters()">Limpiar filtros</button>
+  </div>
 
   <!-- ── Error state ─────────────────────────────── -->
   @if (error()) {

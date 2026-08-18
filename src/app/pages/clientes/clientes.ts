@@ -27,7 +27,6 @@ export class Clientes implements OnInit {
 
   readonly showCreateForm = signal<boolean>(false);
   readonly buscarInput    = signal('');
-  readonly filtersOpen    = signal(true);
   readonly emailEstado    = signal('todos');
   readonly comunaFilter   = signal('');
   exportando = false;
@@ -80,8 +79,6 @@ export class Clientes implements OnInit {
     this.buscarInput.set('');
     this.loadFiltered(1);
   }
-
-  toggleFilters(): void { this.filtersOpen.update(open => !open); }
 
   applyFilters(): void { this.loadFiltered(1); }
 
