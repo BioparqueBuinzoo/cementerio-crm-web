@@ -18,7 +18,7 @@ import { ContactoService } from '../../../services/contacto/contacto.service';
 import { ObservacionClienteService, ObservacionCliente } from '../../../services/observacion-cliente/observacion-cliente.service';
 import { AuthService } from '../../../services/auth/auth.service';
 import { DashboardStatsService, NotificationType } from '../../../services/dashboard-stats/dashboard-stats.service';
-import { surchargeAmount, nextAmount, roundCashTotalChile } from '../../../lib/renewal';
+import { nextAmount, roundCashTotalChile } from '../../../lib/renewal';
 import { validate, format, clean } from 'rut.js';
 
 export interface SepulturaConDatos extends Sepultura {
@@ -62,6 +62,14 @@ export class ClienteDetalle {
   savingObservacion = false;
   observacionErrorMsg = '';
   eliminandoObservacionId: number | null = null;
+
+  // Modal descuento especial de renovación
+  modalDescuentoVisible = false;
+  savingDescuento = false;
+  descuentoErrorMsg = '';
+  descuentoSepId: number | null = null;
+  descuentoContratoId: number | null = null;
+  descuentoPorcentaje: number | null = null;
 
   // Modal contrato
   modalContratoVisible = false;
@@ -567,13 +575,20 @@ export class ClienteDetalle {
     return this.ultimoContrato(sep?.contratos ?? [])?.valor_renovacion ?? 0;
   }
 
-  get recargoRenovacion(): number {
-    return surchargeAmount(this.montoBaseRenovacion);
+  /** Descuento especial del contrato que se está renovando (null = recargo normal del 6%). */
+  get descuentoRenovacion(): number | null {
+    if (!this.contratoSepId) return null;
+    const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
+    return this.ultimoContrato(sep?.contratos ?? [])?.descuento_renovacion_porcentaje ?? null;
   }
 
   get montoTotalRenovacion(): number {
-    const total = this.montoBaseRenovacion + surchargeAmount(this.montoBaseRenovacion);
+    const total = nextAmount(this.montoBaseRenovacion, this.descuentoRenovacion);
     return this.esPagoEfectivo() ? roundCashTotalChile(total) : total;
+  }
+
+  puedeAplicarDescuento(): boolean {
+    return this.authService.hasAnyRole(['admin', 'jefecemenerio']);
   }
 
   private esPagoEfectivo(): boolean {
@@ -631,7 +646,7 @@ export class ClienteDetalle {
 
     const sep = this.sepulturasConDatos().find(s => s.id === idSepultura);
     const ultimo = sep ? this.ultimoContrato(sep.contratos) : null;
-    const montoSugerido = ultimo ? nextAmount(ultimo.valor_renovacion) : 0;
+    const montoSugerido = ultimo ? nextAmount(ultimo.valor_renovacion, ultimo.descuento_renovacion_porcentaje) : 0;
 
     this.contratoForm = {
       fecha_pago: fechaPago,
@@ -660,6 +675,43 @@ export class ClienteDetalle {
   }
 
   cerrarModalContrato(): void { this.modalContratoVisible = false; this.cdr.markForCheck(); }
+
+  abrirModalDescuento(idSepultura: number, contrato: Contrato): void {
+    this.descuentoSepId = idSepultura;
+    this.descuentoContratoId = contrato.id;
+    this.descuentoPorcentaje = contrato.descuento_renovacion_porcentaje;
+    this.descuentoErrorMsg = '';
+    this.modalDescuentoVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarModalDescuento(): void { this.modalDescuentoVisible = false; this.cdr.markForCheck(); }
+
+  async guardarDescuento(): Promise<void> {
+    if (!this.descuentoContratoId) return;
+    const porcentaje = this.descuentoPorcentaje;
+    if (porcentaje !== null && (!Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100)) {
+      this.descuentoErrorMsg = 'Ingresa un porcentaje entre 0 y 100, o deja vacío para quitar el descuento.';
+      return;
+    }
+    this.savingDescuento = true;
+    this.descuentoErrorMsg = '';
+    try {
+      await this.contratoService.setDescuento(this.descuentoContratoId, porcentaje);
+      const sepId = this.descuentoSepId;
+      if (sepId) {
+        const contratos = await this.contratoService.getByIdSepultura(sepId);
+        this.sepulturasConDatos.update((lista) =>
+          lista.map((sep) => (sep.id === sepId ? { ...sep, contratos } : sep)));
+      }
+      this.modalDescuentoVisible = false;
+    } catch (e: any) {
+      this.descuentoErrorMsg = e?.error?.error ?? 'Error al guardar el descuento';
+    } finally {
+      this.savingDescuento = false;
+      this.cdr.markForCheck();
+    }
+  }
 
   confirmacionRenovacionVisible = false;
 

@@ -20,6 +20,12 @@ export class ContratoService {
     await firstValueFrom(this.http.put<void>(`${this.baseUrl}/${id}`, data));
   }
 
+  async setDescuento(id: number, descuentoPorcentaje: number | null): Promise<Contrato> {
+    return firstValueFrom(
+      this.http.patch<Contrato>(`${this.baseUrl}/${id}/descuento`, { descuento_renovacion_porcentaje: descuentoPorcentaje }),
+    );
+  }
+
   async getByIdSepultura(idSepultura: number): Promise<Contrato[]> {
     try {
       const response = await firstValueFrom(

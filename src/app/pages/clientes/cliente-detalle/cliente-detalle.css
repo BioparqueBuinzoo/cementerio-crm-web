@@ -448,6 +448,42 @@
   cursor: not-allowed;
   transform: none;
 }
+.btn-descuento-contrato {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid #d8b4fe;
+  border-radius: 8px;
+  color: #6b21a8;
+  background: #faf5ff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.btn-descuento-contrato:hover {
+  background: #f3e8ff;
+  border-color: #c084fc;
+  transform: translateY(-1px);
+}
+
+.chip-descuento-activo {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  background: #f3e8ff !important;
+  border: 1px solid #d8b4fe !important;
+  color: #6b21a8 !important;
+  font-weight: 700 !important;
+}
+
+.renovacion-descuento-activo { color: #6b21a8; }
+
 .notify-ficha-status {
   width: 100%;
   margin-top: 6px;

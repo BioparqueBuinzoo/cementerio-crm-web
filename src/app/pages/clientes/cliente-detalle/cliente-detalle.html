@@ -284,6 +284,12 @@
                           <re-icon name="refresh-cw" width="14" height="14"></re-icon>
                           Renovar contrato
                         </button>
+                        @if (puedeAplicarDescuento()) {
+                          <button class="btn-descuento-contrato" (click)="abrirModalDescuento(sep.id, uc)" title="Aplicar oferta especial de descuento a la próxima renovación">
+                            <re-icon name="zap" width="14" height="14"></re-icon>
+                            {{ uc.descuento_renovacion_porcentaje != null ? 'Editar descuento' : 'Aplicar descuento' }}
+                          </button>
+                        }
                       </div>
                       @if (notifiedSepulturaId === sep.id && (notifyMessage || notifyError)) {
                         <div class="notify-ficha-status" [class.notify-ficha-status-error]="notifyError">
@@ -322,7 +328,14 @@
                   <div class="contrato-regla-vigencia">
                     <span>1 anualidad</span>
                     <span>Vigencia desde el pago</span>
-                    <span>Recargo de renovación: 6%</span>
+                    @if (uc.descuento_renovacion_porcentaje != null) {
+                      <span class="chip-descuento-activo">
+                        <re-icon name="zap" width="12" height="12"></re-icon>
+                        Descuento especial: {{ uc.descuento_renovacion_porcentaje }}%
+                      </span>
+                    } @else {
+                      <span>Recargo de renovación: 6%</span>
+                    }
                   </div>
                 </div>
               }
@@ -500,10 +513,20 @@
                 <span class="renovacion-policy-label">Recargo fijo</span>
                 <strong>{{ esRenovacionContrato ? '6%' : '6% en la próxima renovación' }}</strong>
               </div>
+              @if (esRenovacionContrato && descuentoRenovacion != null) {
+                <div>
+                  <span class="renovacion-policy-label">Descuento especial</span>
+                  <strong class="renovacion-descuento-activo">{{ descuentoRenovacion }}%</strong>
+                </div>
+              }
               @if (esRenovacionContrato) {
                 <div>
                   <span class="renovacion-policy-label">Cálculo</span>
-                  <strong>{{ formatCLP(montoBaseRenovacion) }} + {{ formatCLP(recargoRenovacion) }}</strong>
+                  @if (descuentoRenovacion != null) {
+                    <strong>{{ formatCLP(montoBaseRenovacion) }} + 6% − {{ descuentoRenovacion }}%</strong>
+                  } @else {
+                    <strong>{{ formatCLP(montoBaseRenovacion) }} + 6%</strong>
+                  }
                 </div>
               }
             </div>
@@ -581,6 +604,48 @@
           <button class="btn-save" (click)="solicitarGuardarContrato()"
             [disabled]="loadingContrato || !contratoForm['fecha_pago'] || !contratoForm['fecha_vencimiento'] || !contratoForm['valor_renovacion'] || !contratoForm['forma_pago'] || (esRenovacionContrato && !contratoForm['numero_comprobante'].trim()) || savingContrato">
             {{ savingContrato ? 'Generando...' : (esRenovacionContrato ? 'Confirmar renovación' : 'Generar contrato') }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  @if (modalDescuentoVisible) {
+    <div class="modal-overlay" (click)="cerrarModalDescuento()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Oferta especial de renovación</h3>
+          <button class="modal-close" (click)="cerrarModalDescuento()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (descuentoErrorMsg) {
+            <div class="modal-error">{{ descuentoErrorMsg }}</div>
+          }
+          <p class="modal-hint">
+            Define un porcentaje de descuento especial para la próxima renovación de esta ficha.
+            Se aplica sobre el monto ya calculado con el recargo fijo del 6% — deja el campo
+            vacío para quitar el descuento.
+          </p>
+          <div class="form-field">
+            <label>Descuento (%)</label>
+            <input
+              type="number" min="0" max="100" step="0.5"
+              [(ngModel)]="descuentoPorcentaje"
+              placeholder="Ej: 15"
+              [disabled]="savingDescuento"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalDescuento()">Cancelar</button>
+          <button class="btn-save" (click)="guardarDescuento()" [disabled]="savingDescuento">
+            {{ savingDescuento ? 'Guardando...' : 'Guardar descuento' }}
           </button>
         </div>
 

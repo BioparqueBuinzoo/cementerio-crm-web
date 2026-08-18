@@ -4,6 +4,7 @@ export interface Contrato {
   fecha_pago: string;
   fecha_vencimiento: string;
   valor_renovacion: number;
+  descuento_renovacion_porcentaje: number | null;
   forma_pago: string;
   numero_comprobante: string;
   id_receptor: number;
