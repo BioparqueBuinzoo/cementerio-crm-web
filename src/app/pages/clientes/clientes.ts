@@ -31,6 +31,19 @@ export class Clientes implements OnInit {
   readonly comunaFilter   = signal('');
   exportando = false;
 
+  private readonly nuevoClienteVacio = {
+    rut: '', nombre: '', apellido1: '', apellido2: '',
+    direccion: '', comuna: '', ciudad: '', telefono: '', celular: '', email: '',
+  };
+  readonly nuevoClienteForm  = signal({ ...this.nuevoClienteVacio });
+  readonly creandoCliente    = signal(false);
+  readonly crearClienteErrorMsg = signal('');
+
+  readonly nuevoClienteFormValido = computed(() => {
+    const f = this.nuevoClienteForm();
+    return !!f.rut.trim() && !!f.nombre.trim() && !!f.apellido1.trim() && !!f.email.trim();
+  });
+
   readonly displayedClientes = computed(() =>
     this.clientes().map(c => ({
       ...c,
@@ -93,7 +106,36 @@ export class Clientes implements OnInit {
   }
 
   toggleCreateForm(): void {
-    this.showCreateForm.update(v => !v);
+    const abriendo = !this.showCreateForm();
+    if (abriendo) {
+      this.nuevoClienteForm.set({ ...this.nuevoClienteVacio });
+      this.crearClienteErrorMsg.set('');
+    }
+    this.showCreateForm.set(abriendo);
+  }
+
+  updateNuevoCliente(campo: keyof typeof this.nuevoClienteVacio, valor: string): void {
+    this.nuevoClienteForm.update(f => ({ ...f, [campo]: valor }));
+  }
+
+  onRutInput(value: string): void {
+    const cleaned = clean(value);
+    this.updateNuevoCliente('rut', cleaned.length > 0 ? format(cleaned) : value);
+  }
+
+  async crearCliente(): Promise<void> {
+    if (!this.nuevoClienteFormValido() || this.creandoCliente()) return;
+    this.creandoCliente.set(true);
+    this.crearClienteErrorMsg.set('');
+    try {
+      await this.clienteService.create(this.nuevoClienteForm());
+      this.showCreateForm.set(false);
+      this.loadFiltered(1);
+    } catch (e: any) {
+      this.crearClienteErrorMsg.set(e?.error?.error ?? 'Error al crear el cliente');
+    } finally {
+      this.creandoCliente.set(false);
+    }
   }
 
   changePage(newPage: number): void {

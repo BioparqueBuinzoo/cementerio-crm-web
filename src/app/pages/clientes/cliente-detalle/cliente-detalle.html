@@ -480,6 +480,52 @@
       }
     </div>
 
+    <!-- ── Zona de peligro: eliminar cliente ────────────── -->
+    @if (puedeEliminarCliente()) {
+      <div class="danger-zone">
+        <div class="danger-zone-text">
+          <strong>Eliminar cliente</strong>
+          <p>El cliente se ocultará de todos los listados y fichas. No borra sepulturas, contratos ni historial — solo administración o jefatura de cementerio pueden revertirlo.</p>
+        </div>
+        <button class="btn-danger" (click)="abrirModalEliminarCliente()">
+          <re-icon name="trash" width="14" height="14"></re-icon>
+          Eliminar cliente
+        </button>
+      </div>
+    }
+
+  }
+
+  <!-- ── Modal Eliminar cliente ───────────────────────── -->
+  @if (modalEliminarClienteVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEliminarCliente()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Eliminar cliente</h3>
+          <button class="modal-close" (click)="cerrarModalEliminarCliente()" [disabled]="eliminandoCliente">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (eliminarClienteErrorMsg) {
+            <div class="modal-error">{{ eliminarClienteErrorMsg }}</div>
+          }
+          <p class="modal-confirm-text">
+            ¿Eliminar a <strong>{{ nombreCompleto }}</strong> ({{ cliente()!.rut || 'sin RUT' }})? El cliente dejará de aparecer en los listados y en la búsqueda. Esta acción no borra físicamente sus datos.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEliminarCliente()" [disabled]="eliminandoCliente">Cancelar</button>
+          <button class="btn-danger" (click)="confirmarEliminarCliente()" [disabled]="eliminandoCliente">
+            {{ eliminandoCliente ? 'Eliminando...' : 'Eliminar cliente' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
   }
 
   <!-- ── Modal Contrato ───────────────────────────────── -->
@@ -545,7 +591,15 @@
               <div class="renewal-fields">
                 <div class="form-field renewal-total-field">
                   <label>Total a pagar *</label>
-                  <div class="input-display input-display-total">{{ montoContratoStr }}</div>
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    class="input-display input-display-total"
+                    [value]="montoContratoStr"
+                    (input)="onMontoContratoInput($any($event.target).value)"
+                    (blur)="onMontoContratoBlur()"
+                    aria-label="Total a pagar de la renovación"
+                  />
                 </div>
                 <div class="form-field">
                   <label>Medio de pago *</label>

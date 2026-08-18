@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
@@ -25,6 +25,26 @@ export class ConfiguracionUsuarios implements OnInit {
   readonly savingUserId = signal<number | null>(null);
   readonly userActionError = signal('');
   readonly pendingRoles = signal<Record<number, string>>({});
+  readonly busqueda = signal('');
+
+  readonly usuariosFiltrados = computed(() => {
+    const q = this.busqueda().trim().toLocaleLowerCase('es-CL');
+    const lista = this.usuarios();
+    if (!q) return lista;
+    return lista.filter((u) =>
+      this.nombreUsuario(u).toLocaleLowerCase('es-CL').includes(q) || u.email.toLocaleLowerCase('es-CL').includes(q));
+  });
+
+  readonly totalActivos = computed(() => this.usuarios().filter((u) => u.app_status === 'active').length);
+  readonly totalPendientes = computed(() => this.usuarios().filter((u) => u.app_status === 'pending').length);
+
+  iniciales(u: AsisUser): string {
+    const partes = this.nombreUsuario(u).trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return '?';
+    const primera = partes[0][0] ?? '';
+    const segunda = partes.length > 1 ? partes[partes.length - 1][0] ?? '' : '';
+    return (primera + segunda).toUpperCase();
+  }
 
   ngOnInit(): void {
     if (this.auth.isAdmin()) {

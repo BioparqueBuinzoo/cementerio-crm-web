@@ -49,6 +49,11 @@
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   width: 15px; height: 15px; color: rgba(255,255,255,.5); pointer-events: none;
 }
+/* re-icon copia su clase al <svg> interno; sin esto el svg queda absolute
+   otra vez adentro del host ya posicionado y se corre tapando el texto. */
+.search-icon svg {
+  position: static; inset: auto; transform: none; width: 100%; height: 100%;
+}
 
 .search-input {
   width: 100%;

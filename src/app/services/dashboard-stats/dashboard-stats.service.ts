@@ -82,6 +82,7 @@ export interface NotificationSummary {
 export interface AutoNotificationSettings {
   enabled30Dias: boolean;
   enabledVenceHoy: boolean;
+  enabledVencidoRecordatorio: boolean;
   sendTime: string;
   lastRunDate: string | null;
   updatedBy: string | null;
@@ -159,8 +160,8 @@ export class DashboardStatsService {
     return this.http.get<AutoNotificationSettings>(`${this.url}/vencimientos/notificaciones/auto`);
   }
 
-  setAutoNotificationEnabled(enabled30Dias: boolean, enabledVenceHoy: boolean, sendTime: string): Observable<AutoNotificationSettings> {
-    return this.http.put<AutoNotificationSettings>(`${this.url}/vencimientos/notificaciones/auto`, { enabled30Dias, enabledVenceHoy, sendTime });
+  setAutoNotificationEnabled(enabled30Dias: boolean, enabledVenceHoy: boolean, enabledVencidoRecordatorio: boolean, sendTime: string): Observable<AutoNotificationSettings> {
+    return this.http.put<AutoNotificationSettings>(`${this.url}/vencimientos/notificaciones/auto`, { enabled30Dias, enabledVenceHoy, enabledVencidoRecordatorio, sendTime });
   }
 
   notificationSummary(tipo: NotificationType): Observable<NotificationSummary> {

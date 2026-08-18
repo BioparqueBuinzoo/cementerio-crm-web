@@ -80,6 +80,10 @@ export class ClienteService {
     await firstValueFrom(this.http.put(`${this.baseUrl}/${id}`, data));
   }
 
+  async eliminar(id: number): Promise<void> {
+    await firstValueFrom(this.http.delete(`${this.baseUrl}/${id}`));
+  }
+
   exportar(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/export`, { responseType: 'blob' });
   }

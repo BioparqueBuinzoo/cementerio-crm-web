@@ -165,4 +165,75 @@
     </div>
   }
 
+  <!-- ── Modal Nuevo cliente ─────────────────────────── -->
+  @if (showCreateForm()) {
+    <div class="modal-overlay" (click)="toggleCreateForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <h3>Nuevo cliente</h3>
+          <button class="modal-close" (click)="toggleCreateForm()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          @if (crearClienteErrorMsg()) {
+            <div class="modal-error">{{ crearClienteErrorMsg() }}</div>
+          }
+          <div class="form-grid-2col">
+            <div class="form-field">
+              <label>RUT *</label>
+              <input type="text" [ngModel]="nuevoClienteForm().rut" (ngModelChange)="onRutInput($event)" placeholder="Ej: 12.345.678-9" />
+            </div>
+            <div class="form-field">
+              <label>Nombre *</label>
+              <input type="text" [ngModel]="nuevoClienteForm().nombre" (ngModelChange)="updateNuevoCliente('nombre', $event)" placeholder="Nombre" />
+            </div>
+            <div class="form-field">
+              <label>Primer apellido *</label>
+              <input type="text" [ngModel]="nuevoClienteForm().apellido1" (ngModelChange)="updateNuevoCliente('apellido1', $event)" placeholder="Primer apellido" />
+            </div>
+            <div class="form-field">
+              <label>Segundo apellido</label>
+              <input type="text" [ngModel]="nuevoClienteForm().apellido2" (ngModelChange)="updateNuevoCliente('apellido2', $event)" placeholder="Segundo apellido" />
+            </div>
+            <div class="form-field">
+              <label>Dirección</label>
+              <input type="text" [ngModel]="nuevoClienteForm().direccion" (ngModelChange)="updateNuevoCliente('direccion', $event)" placeholder="Dirección" />
+            </div>
+            <div class="form-field">
+              <label>Comuna</label>
+              <input type="text" [ngModel]="nuevoClienteForm().comuna" (ngModelChange)="updateNuevoCliente('comuna', $event)" placeholder="Comuna" />
+            </div>
+            <div class="form-field">
+              <label>Ciudad</label>
+              <input type="text" [ngModel]="nuevoClienteForm().ciudad" (ngModelChange)="updateNuevoCliente('ciudad', $event)" placeholder="Ciudad" />
+            </div>
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input type="text" [ngModel]="nuevoClienteForm().telefono" (ngModelChange)="updateNuevoCliente('telefono', $event)" placeholder="Teléfono" />
+            </div>
+            <div class="form-field">
+              <label>Celular</label>
+              <input type="text" [ngModel]="nuevoClienteForm().celular" (ngModelChange)="updateNuevoCliente('celular', $event)" placeholder="Celular" />
+            </div>
+            <div class="form-field form-field-full">
+              <label>Email *</label>
+              <input type="email" [ngModel]="nuevoClienteForm().email" (ngModelChange)="updateNuevoCliente('email', $event)" placeholder="Email" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="toggleCreateForm()">Cancelar</button>
+          <button class="btn-save" (click)="crearCliente()" [disabled]="!nuevoClienteFormValido() || creandoCliente()">
+            {{ creandoCliente() ? 'Creando...' : 'Crear cliente' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
 </div>

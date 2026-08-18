@@ -66,6 +66,7 @@ export class AuthService {
       if (environment.allowUnauthenticatedPreview) {
         this._currentUser.set({
           id: 'visual-preview',
+          iamUserId: 0,
           email: 'preview@parquedeasis.cl',
           name: 'Vista de diseño',
           pictureUrl: null,

@@ -44,6 +44,7 @@ export class ConfiguracionCorreo implements OnInit {
   readonly autoNotifSaving = signal(false);
   readonly autoNotif30Dias = signal(false);
   readonly autoNotifVenceHoy = signal(false);
+  readonly autoNotifVencidoRecordatorio = signal(false);
   readonly autoNotifSendTime = signal('09:00');
   readonly autoNotifLastRun = signal<string | null>(null);
   readonly autoNotifError = signal('');
@@ -61,6 +62,7 @@ export class ConfiguracionCorreo implements OnInit {
       next: (res) => {
         this.autoNotif30Dias.set(res.enabled30Dias);
         this.autoNotifVenceHoy.set(res.enabledVenceHoy);
+        this.autoNotifVencidoRecordatorio.set(res.enabledVencidoRecordatorio);
         this.autoNotifSendTime.set(res.sendTime);
         this.autoNotifLastRun.set(res.lastRunDate);
         this.autoNotifLoading.set(false);
@@ -72,16 +74,18 @@ export class ConfiguracionCorreo implements OnInit {
     });
   }
 
-  toggleAutoNotificaciones(tipo: '30Dias' | 'VenceHoy'): void {
+  toggleAutoNotificaciones(tipo: '30Dias' | 'VenceHoy' | 'VencidoRecordatorio'): void {
     if (this.autoNotifSaving()) return;
     const enabled30Dias = tipo === '30Dias' ? !this.autoNotif30Dias() : this.autoNotif30Dias();
     const enabledVenceHoy = tipo === 'VenceHoy' ? !this.autoNotifVenceHoy() : this.autoNotifVenceHoy();
+    const enabledVencidoRecordatorio = tipo === 'VencidoRecordatorio' ? !this.autoNotifVencidoRecordatorio() : this.autoNotifVencidoRecordatorio();
     this.autoNotifSaving.set(true);
     this.autoNotifError.set('');
-    this.statsService.setAutoNotificationEnabled(enabled30Dias, enabledVenceHoy, this.autoNotifSendTime()).subscribe({
+    this.statsService.setAutoNotificationEnabled(enabled30Dias, enabledVenceHoy, enabledVencidoRecordatorio, this.autoNotifSendTime()).subscribe({
       next: (res) => {
         this.autoNotif30Dias.set(res.enabled30Dias);
         this.autoNotifVenceHoy.set(res.enabledVenceHoy);
+        this.autoNotifVencidoRecordatorio.set(res.enabledVencidoRecordatorio);
         this.autoNotifSendTime.set(res.sendTime);
         this.autoNotifLastRun.set(res.lastRunDate);
         this.autoNotifSaving.set(false);
@@ -98,7 +102,7 @@ export class ConfiguracionCorreo implements OnInit {
     if (!sendTime || this.autoNotifSaving()) return;
     this.autoNotifSaving.set(true);
     this.autoNotifError.set('');
-    this.statsService.setAutoNotificationEnabled(this.autoNotif30Dias(), this.autoNotifVenceHoy(), sendTime).subscribe({
+    this.statsService.setAutoNotificationEnabled(this.autoNotif30Dias(), this.autoNotifVenceHoy(), this.autoNotifVencidoRecordatorio(), sendTime).subscribe({
       next: (res) => {
         this.autoNotifSendTime.set(res.sendTime);
         this.autoNotifSaving.set(false);

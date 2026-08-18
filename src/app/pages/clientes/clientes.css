@@ -68,6 +68,15 @@
   color: rgba(255,255,255,.5);
   pointer-events: none;
 }
+/* re-icon copia su propia clase al <svg> interno, así que ".search-icon" matchea
+   dos veces (host + svg); sin esto el svg queda absolute otra vez adentro del
+   host ya posicionado y se corre hacia la derecha, tapando el placeholder. */
+.search-icon svg {
+  position: static;
+  inset: auto;
+  transform: none;
+  width: 100%; height: 100%;
+}
 
 .search-input {
   width: 100%;
@@ -575,3 +584,99 @@
   .clientes-table      { min-width: 1180px; }
   .clientes-table th, .clientes-table td { padding: 9px 11px; }
 }
+
+/* ── Modal "Nuevo cliente" ────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+.modal-content {
+  background: var(--color-surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.16), 0 0 0 1px rgba(0,0,0,.05);
+  max-width: 640px; width: 100%;
+  max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border, #d4ddd7);
+  background: var(--color-surface-2, #f6f9f7);
+  flex-shrink: 0;
+}
+.modal-header h3 {
+  margin: 0; font-size: 15px; font-weight: 700;
+  color: var(--color-text, #111b14); letter-spacing: -0.02em;
+  font-family: var(--font-display, 'Montserrat', sans-serif);
+}
+.modal-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 7px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--color-text-muted, #6b7d70);
+  transition: background .15s, color .15s;
+}
+.modal-close:hover { background: var(--color-border-2, #e8efea); color: var(--color-text, #111b14); }
+.modal-body { padding: 20px; flex: 1; overflow-y: auto; }
+.modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 13px 20px;
+  border-top: 1px solid var(--color-border, #d4ddd7);
+  background: var(--color-surface-2, #f6f9f7);
+  flex-shrink: 0;
+}
+.modal-error {
+  padding: 10px 13px; margin-bottom: 16px;
+  background: #fee2e2; border: 1px solid #fecaca;
+  border-radius: 7px; font-size: 12.5px; color: #991b1b; font-weight: 500;
+}
+
+.form-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field-full { grid-column: 1 / -1; }
+.form-field label {
+  font-size: 10.5px; font-weight: 700;
+  color: var(--color-text-muted, #6b7d70);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.form-field input {
+  width: 100%; padding: 9px 12px; font-size: 13px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  border: 1px solid var(--color-border, #d4ddd7);
+  border-radius: 7px;
+  color: var(--color-text, #111b14);
+  background: var(--color-surface, #fff);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  box-sizing: border-box;
+}
+.form-field input::placeholder { color: var(--color-text-muted, #6b7d70); opacity: .55; }
+.form-field input:focus {
+  border-color: var(--color-primary-dark, #2d6a4f);
+  box-shadow: 0 0 0 3px rgba(45,106,79,.11);
+}
+
+.btn-cancel {
+  padding: 8px 18px; font-size: 13px; font-weight: 500;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  color: var(--color-text-2, #374940);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #d4ddd7);
+  border-radius: 7px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.btn-cancel:hover { background: var(--color-surface-2, #f6f9f7); border-color: var(--color-text-muted, #6b7d70); }
+
+.btn-save {
+  padding: 8px 20px; font-size: 13px; font-weight: 600;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  color: #fff; background: var(--color-primary-dark, #2d6a4f);
+  border: none; border-radius: 7px; cursor: pointer;
+  transition: background .15s;
+}
+.btn-save:hover:not(:disabled) { background: var(--color-primary-deeper, #1b4332); }
+.btn-save:disabled { opacity: .5; cursor: not-allowed; }

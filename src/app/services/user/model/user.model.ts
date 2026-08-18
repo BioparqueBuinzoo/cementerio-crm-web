@@ -1,5 +1,6 @@
 export interface UserInfo {
     id: string;
+    iamUserId: number;
     email: string;
     name: string;
     pictureUrl: string | null;

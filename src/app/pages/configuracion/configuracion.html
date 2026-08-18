@@ -20,6 +20,15 @@
         <h2>Configuración de correo</h2>
         <p>Estado SMTP, vista previa del correo y notificaciones automáticas de vencimiento.</p>
       </div>
+      <div class="config-menu-card-footer">
+        @if (smtpConfigured() !== null) {
+          <span class="config-menu-status-chip" [class.config-menu-status-chip-off]="!smtpConfigured()">
+            <re-icon [name]="smtpConfigured() ? 'check-circle' : 'alert'" width="11" height="11"></re-icon>
+            {{ smtpConfigured() ? 'SMTP conectado' : 'SMTP sin configurar' }}
+          </span>
+        }
+        <span class="config-menu-status-note">Vencimientos, avisos y recordatorios</span>
+      </div>
     </a>
 
     @if (auth.isAdmin()) {
@@ -33,6 +42,15 @@
         <div class="config-menu-copy">
           <h2>Usuarios y permisos</h2>
           <p>Administra qué personas tienen acceso a la plataforma y con qué rol.</p>
+        </div>
+        <div class="config-menu-card-footer">
+          @if (totalUsuarios() !== null) {
+            <span class="config-menu-status-chip">
+              <re-icon name="users-alt" width="11" height="11"></re-icon>
+              {{ totalUsuarios() }} usuarios
+            </span>
+          }
+          <span class="config-menu-status-note">Acceso solo administración</span>
         </div>
       </a>
     }

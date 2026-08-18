@@ -30,24 +30,48 @@
       @if (userActionError()) {
         <div class="config-card-body config-card-body-tight"><p class="config-error">{{ userActionError() }}</p></div>
       }
+
+      <div class="users-summary-row">
+        <div class="users-summary-counts">
+          <span class="users-summary-total">{{ usuarios().length }} usuario{{ usuarios().length === 1 ? '' : 's' }}</span>
+          <span class="users-summary-badge users-summary-badge-ok">{{ totalActivos() }} activos</span>
+          @if (totalPendientes() > 0) {
+            <span class="users-summary-badge users-summary-badge-pending">{{ totalPendientes() }} pendiente{{ totalPendientes() === 1 ? '' : 's' }}</span>
+          }
+        </div>
+        <div class="users-search">
+          <re-icon name="search" width="15" height="15"></re-icon>
+          <input type="text" placeholder="Buscar por nombre o correo…" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" />
+        </div>
+      </div>
+
       <div class="config-table-wrap">
         <table class="config-table">
-          <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último ingreso</th></tr></thead>
+          <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Último ingreso</th></tr></thead>
           <tbody>
-            @for (u of usuarios(); track u.id) {
+            @for (u of usuariosFiltrados(); track u.id) {
               <tr>
-                <td>{{ nombreUsuario(u) }}</td>
-                <td>{{ u.email }}</td>
                 <td>
-                  <select class="role-select" [disabled]="savingUserId() !== null" [ngModel]="pendingRoles()[u.id] || (u.roles.length ? u.roles[0] : '')" (ngModelChange)="cambiarRol(u, $event)">
-                    @if (!u.roles[0]) { <option value="" disabled>Sin rol</option> }
-                    @for (rol of roles(); track rol.code) { <option [value]="rol.code">{{ rol.name }}</option> }
-                  </select>
-                  @if (pendingRoles()[u.id]) {
-                    <button type="button" class="role-apply-btn" [disabled]="savingUserId() !== null" (click)="aplicarRol(u)">
-                      {{ savingUserId() === u.id ? 'Aplicando…' : 'Aplicar' }}
-                    </button>
-                  }
+                  <div class="user-cell">
+                    <span class="user-avatar">{{ iniciales(u) }}</span>
+                    <div class="user-cell-copy">
+                      <strong>{{ nombreUsuario(u) }}</strong>
+                      <span>{{ u.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="role-cell">
+                    <select class="role-select" [disabled]="savingUserId() !== null" [ngModel]="pendingRoles()[u.id] || (u.roles.length ? u.roles[0] : '')" (ngModelChange)="cambiarRol(u, $event)">
+                      @if (!u.roles[0]) { <option value="" disabled>Sin rol</option> }
+                      @for (rol of roles(); track rol.code) { <option [value]="rol.code">{{ rol.name }}</option> }
+                    </select>
+                    @if (pendingRoles()[u.id]) {
+                      <button type="button" class="role-apply-btn" [disabled]="savingUserId() !== null" (click)="aplicarRol(u)">
+                        {{ savingUserId() === u.id ? 'Aplicando…' : 'Aplicar' }}
+                      </button>
+                    }
+                  </div>
                 </td>
                 <td>
                   <select class="status-select" [class.status-select-active]="u.app_status === 'active'" [disabled]="savingUserId() === u.id" [ngModel]="u.app_status" (ngModelChange)="cambiarEstado(u, $event)">
@@ -57,7 +81,7 @@
                 <td>{{ u.last_login_at ? formatFecha(u.last_login_at) : '—' }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="config-muted">No hay usuarios registrados.</td></tr>
+              <tr><td colspan="4" class="config-muted">{{ busqueda() ? 'Ningún usuario coincide con la búsqueda.' : 'No hay usuarios registrados.' }}</td></tr>
             }
           </tbody>
         </table>

@@ -1,5 +1,5 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, effect, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -49,6 +49,7 @@ export class ClienteDetalle {
   private readonly observacionService    = inject(ObservacionClienteService);
   private readonly authService           = inject(AuthService);
   private readonly dashboardStatsService = inject(DashboardStatsService);
+  private readonly router                = inject(Router);
 
   readonly cliente             = signal<Cliente | null>(null);
   readonly sepulturasConDatos  = signal<SepulturaConDatos[]>([]);
@@ -591,6 +592,42 @@ export class ClienteDetalle {
     return this.authService.hasAnyRole(['admin', 'jefecemenerio']);
   }
 
+  puedeEliminarCliente(): boolean {
+    return this.authService.hasAnyRole(['admin', 'jefecemenerio']);
+  }
+
+  // Zona de peligro: eliminar cliente (soft delete, admin/jefecemenerio)
+  modalEliminarClienteVisible = false;
+  eliminandoCliente = false;
+  eliminarClienteErrorMsg = '';
+
+  abrirModalEliminarCliente(): void {
+    if (!this.puedeEliminarCliente()) return;
+    this.eliminarClienteErrorMsg = '';
+    this.modalEliminarClienteVisible = true;
+  }
+
+  cerrarModalEliminarCliente(): void {
+    if (this.eliminandoCliente) return;
+    this.modalEliminarClienteVisible = false;
+    this.cdr.markForCheck();
+  }
+
+  async confirmarEliminarCliente(): Promise<void> {
+    const c = this.cliente();
+    if (!c || !this.puedeEliminarCliente()) return;
+    this.eliminandoCliente = true;
+    this.eliminarClienteErrorMsg = '';
+    try {
+      await this.clienteService.eliminar(c.id);
+      await this.router.navigate(['/asis/clientes']);
+    } catch (e: any) {
+      this.eliminarClienteErrorMsg = e?.error?.error ?? 'Error al eliminar el cliente';
+      this.eliminandoCliente = false;
+      this.cdr.markForCheck();
+    }
+  }
+
   private esPagoEfectivo(): boolean {
     return this.contratoForm.forma_pago.trim().toLocaleLowerCase('es-CL').includes('efectivo');
   }
@@ -748,7 +785,6 @@ export class ClienteDetalle {
       const fechaPago = this.fechaLocalISO();
       this.contratoForm.fecha_pago = fechaPago;
       this.onFechaPagoChange(fechaPago);
-      this.contratoForm.valor_renovacion = this.montoTotalRenovacion;
     }
     if (!this.contratoForm.fecha_pago || !this.contratoForm.fecha_vencimiento || !this.contratoForm.valor_renovacion) return;
     this.savingContrato = true;
@@ -1210,9 +1246,17 @@ export class ClienteDetalle {
       this.notifyMessage = 'Notificación agregada a la cola de envío.';
       await this.loadLastSent();
     } catch (error) {
-      this.notifyError = error instanceof HttpErrorResponse && typeof error.error?.error === 'string'
+      const code = error instanceof HttpErrorResponse ? error.error?.code : undefined;
+      const message = error instanceof HttpErrorResponse && typeof error.error?.error === 'string'
         ? error.error.error
         : 'No fue posible solicitar el envío. Intenta nuevamente.';
+      // El cooldown de 24h es una regla de negocio esperada, no una falla —
+      // se muestra con el estilo informativo, no con el de error.
+      if (code === 'CLIENT_NOTIFICATION_COOLDOWN') {
+        this.notifyMessage = message;
+      } else {
+        this.notifyError = message;
+      }
     } finally {
       this.notifyingSepulturaId = null;
       this.cdr.markForCheck();

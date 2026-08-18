@@ -20,26 +20,72 @@
     </a>
   </nav>
 
-  <section class="config-card">
-    @if (loadingCorreo()) {
-      <div class="config-card-body">
-        <p class="config-muted">Cargando estado…</p>
-      </div>
-    } @else if (correoError()) {
-      <div class="config-card-body">
-        <p class="config-error">{{ correoError() }}</p>
-      </div>
-    } @else {
-      <div class="config-card-body email-config-body">
-        @if (!smtpConfigured()) {
-          <p class="config-hint config-hint-warning">
-            El envío de correos de renovación (por vencer / vencidas) está deshabilitado hasta que se configure el servidor SMTP en el backend.
-          </p>
-        }
+  @if (loadingCorreo()) {
+    <section class="config-card"><div class="config-card-body"><p class="config-muted">Cargando estado…</p></div></section>
+  } @else if (correoError()) {
+    <section class="config-card"><div class="config-card-body"><p class="config-error">{{ correoError() }}</p></div></section>
+  } @else {
 
+    @if (!smtpConfigured()) {
+      <p class="config-hint config-hint-warning">
+        El envío de correos de renovación (por vencer / vencidas) está deshabilitado hasta que se configure el servidor SMTP en el backend.
+      </p>
+    }
+
+    <!-- Franja de estado -->
+    <div class="email-status-strip">
+      <div class="email-status-card" [class.email-status-card-ok]="smtpConfigured()">
+        <div class="email-status-icon">
+          <re-icon [name]="smtpConfigured() ? 'check-circle' : 'alert'" width="19" height="19"></re-icon>
+        </div>
+        <div class="email-status-copy">
+          <span class="email-status-eyebrow">Estado SMTP</span>
+          <strong>{{ smtpConfigured() ? 'Conectado' : 'No configurado' }}</strong>
+          <small>{{ smtpConfigured() ? 'Envíos automáticos habilitados' : 'Los envíos automáticos están deshabilitados' }}</small>
+        </div>
+      </div>
+
+      <div class="email-status-card">
+        <div class="email-status-icon">
+          <re-icon name="refresh-cw" width="19" height="19"></re-icon>
+        </div>
+        <div class="email-status-copy">
+          <span class="email-status-eyebrow">Último envío masivo</span>
+          @if (latestBatchLoading()) {
+            <strong>Cargando…</strong>
+          } @else if (latestBatchError()) {
+            <strong class="config-error" style="font-size:.8rem;">{{ latestBatchError() }}</strong>
+          } @else if (latestBatch(); as batch) {
+            <strong>{{ batch.notificationType === 'por-vencer' ? 'Por vencer' : 'Vencidas' }} · {{ formatFechaHora(batch.createdAt) }}</strong>
+            <small>{{ batch.sentCount }} / {{ batch.recipientCount }} enviados{{ batch.failedCount > 0 ? ' · ' + batch.failedCount + ' fallidos' : '' }}</small>
+          } @else {
+            <strong>Sin envíos aún</strong>
+            <small>No se ha enviado ninguna notificación masiva</small>
+          }
+        </div>
+      </div>
+
+      <div class="email-status-card">
+        <div class="email-status-icon email-status-icon-neutral">
+          <re-icon name="clock" width="19" height="19"></re-icon>
+        </div>
+        <div class="email-status-copy">
+          <span class="email-status-eyebrow">Protección de envíos</span>
+          <strong>{{ cooldownHours() ?? '—' }} horas</strong>
+          <small>Mínimo entre correos al mismo cliente</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista previa + correo de prueba -->
+    <section class="config-card">
+      <div class="config-card-header">
+        <re-icon name="mail" width="15" height="15"></re-icon>
+        <h2>Vista previa y correo de prueba</h2>
+      </div>
+      <div class="config-card-body email-config-body">
         <div class="email-layout">
           <div class="email-main">
-
             <div class="section-heading-row">
               <h3 class="email-section-title">Vista previa (datos de ejemplo)</h3>
               <select class="test-email-select preview-type-select" [ngModel]="previewType" (ngModelChange)="cambiarTipoPreview($event)" aria-label="Tipo de correo a previsualizar">
@@ -49,111 +95,132 @@
               </select>
             </div>
             @if (previewLoading()) {
-              <p class="config-muted">Generando vista previa…</p>
+              <div class="email-preview-frame-wrap email-preview-frame-wrap-empty">
+                <p class="config-muted">Generando vista previa…</p>
+              </div>
             } @else if (previewError()) {
-              <p class="config-error">{{ previewError() }}</p>
+              <div class="email-preview-frame-wrap email-preview-frame-wrap-empty">
+                <p class="config-error">{{ previewError() }}</p>
+              </div>
             } @else if (previewHtml()) {
               <div class="email-preview-frame-wrap">
+                <div class="email-preview-frame-bar">
+                  <span class="email-preview-frame-dots">
+                    <span class="email-preview-frame-dot"></span>
+                    <span class="email-preview-frame-dot"></span>
+                    <span class="email-preview-frame-dot"></span>
+                  </span>
+                  <span class="email-preview-frame-label">{{ nombrePreviewType() }}</span>
+                </div>
                 <iframe class="email-preview-frame" [srcdoc]="previewHtml()" title="Vista previa del correo de renovación" sandbox=""></iframe>
               </div>
             }
-
           </div>
 
           <div class="email-side">
             <h3 class="email-section-title">Enviar correo de prueba</h3>
-             <p class="config-muted">Envía a una dirección propia el correo que se ve en la vista previa (<strong>{{ nombrePreviewType() }}</strong>).</p>
-             <div class="test-email-form">
-               <label class="test-email-label" for="test-email-to">Correo de destino</label>
-               <input
-                 id="test-email-to"
-                 type="email"
-                class="test-email-input"
-                [(ngModel)]="testEmailTo"
-                placeholder="tu-correo@ejemplo.cl"
-                (keydown.enter)="enviarCorreoPrueba()"
-              />
+            <p class="config-muted">Envía a una dirección propia el correo que se ve en la vista previa (<strong>{{ nombrePreviewType() }}</strong>).</p>
+            <div class="test-email-form">
+              <label class="test-email-label" for="test-email-to">Correo de destino</label>
+              <div class="test-email-input-group">
+                <re-icon name="mail" width="14" height="14"></re-icon>
+                <input
+                  id="test-email-to"
+                  type="email"
+                  class="test-email-input"
+                  [(ngModel)]="testEmailTo"
+                  placeholder="tu-correo@ejemplo.cl"
+                  (keydown.enter)="enviarCorreoPrueba()"
+                />
+              </div>
               <button
                 type="button"
                 class="btn-primary"
                 (click)="enviarCorreoPrueba()"
                 [disabled]="testEmailSending() || !testEmailTo.trim() || !smtpConfigured()"
               >
+                <re-icon name="mail" width="13" height="13"></re-icon>
                 {{ testEmailSending() ? 'Enviando…' : 'Enviar correo de prueba' }}
               </button>
               @if (testEmailResult()) { <p class="config-hint">{{ testEmailResult() }}</p> }
               @if (testEmailError()) { <p class="config-error">{{ testEmailError() }}</p> }
             </div>
-
-            <div class="side-divider"></div>
-            <h3 class="email-section-title">Última notificación masiva enviada</h3>
-            @if (latestBatchLoading()) {
-              <p class="config-muted">Cargando…</p>
-            } @else if (latestBatchError()) {
-              <p class="config-error">{{ latestBatchError() }}</p>
-            } @else if (latestBatch(); as batch) {
-              <div class="batch-summary">
-                <span class="batch-chip">{{ batch.notificationType === 'por-vencer' ? 'Por vencer' : 'Vencidas' }}</span>
-                <span>{{ formatFechaHora(batch.createdAt) }}</span>
-                <span class="status-badge" [class.status-ok]="batch.status === 'completed'" [class.status-off]="batch.status !== 'completed'">
-                  {{ batch.status }}
-                </span>
-                <span>{{ batch.sentCount }} / {{ batch.recipientCount }} enviados</span>
-                @if (batch.failedCount > 0) { <span class="config-error">{{ batch.failedCount }} fallidos</span> }
-              </div>
-            } @else {
-              <p class="config-muted">Aún no se ha enviado ninguna notificación masiva.</p>
-            }
-
-            <div class="side-divider"></div>
-            <div class="section-heading-row">
-              <div>
-                <h3 class="email-section-title">Notificaciones automáticas</h3>
-                <p class="section-description">Elige qué recordatorios debe enviar el sistema sin intervención manual.</p>
-              </div>
-              <span class="automation-count">2 reglas</span>
-            </div>
-            <div class="auto-send-time">
-              <div>
-                <strong>Hora de envío</strong>
-                <span>Hora local de Chile. El sistema revisa cada hora y nunca envía antes de esta hora.</span>
-              </div>
-              <input type="time" [value]="autoNotifSendTime()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Hora de envío de notificaciones automáticas" (change)="cambiarHoraNotificaciones($event)" />
-            </div>
-            <div class="auto-notif-list">
-              <div class="auto-notif-card">
-                <div class="auto-notif-copy">
-                  <strong>Aviso anticipado</strong>
-                  <span>Enviar 30 días antes del vencimiento.</span>
-                </div>
-                <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
-                  <input type="checkbox" [checked]="autoNotif30Dias()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso automático 30 días antes" (change)="toggleAutoNotificaciones('30Dias')" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                </label>
-                <span class="auto-notif-label">{{ autoNotif30Dias() ? 'Activado' : 'Desactivado' }}</span>
-              </div>
-              <div class="auto-notif-card">
-                <div class="auto-notif-copy">
-                  <strong>Aviso de vencimiento</strong>
-                  <span>Enviar hoy y repetir cada 7 días mientras siga vencido.</span>
-                </div>
-                <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
-                  <input type="checkbox" [checked]="autoNotifVenceHoy()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso el día del vencimiento y cada 7 días" (change)="toggleAutoNotificaciones('VenceHoy')" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                </label>
-                <span class="auto-notif-label">{{ autoNotifVenceHoy() ? 'Activado' : 'Desactivado' }}</span>
-              </div>
-            </div>
-            @if (autoNotifLastRun()) { <small class="config-muted">Último chequeo: {{ autoNotifLastRun() }}</small> }
-            @if (autoNotifError()) { <p class="config-error">{{ autoNotifError() }}</p> }
           </div>
         </div>
-        <div class="email-protection-note">
-          <re-icon name="clock" width="16" height="16"></re-icon>
-          <span><strong>Protección de envíos</strong> {{ cooldownHours() }} horas entre correos al mismo cliente</span>
+      </div>
+    </section>
+
+    <!-- Notificaciones automáticas -->
+    <section class="config-card">
+      <div class="config-card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <re-icon name="refresh-cw" width="15" height="15"></re-icon>
+          <div>
+            <h2 style="margin:0;">Notificaciones automáticas</h2>
+            <p class="section-description">Elige qué recordatorios debe enviar el sistema sin intervención manual.</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span class="automation-count">3 reglas</span>
+          <div class="auto-send-time">
+            <div>
+              <strong>Hora de envío</strong>
+              <span>Hora local de Chile. El sistema revisa cada hora y nunca envía antes de esta hora.</span>
+            </div>
+            <input type="time" [value]="autoNotifSendTime()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Hora de envío de notificaciones automáticas" (change)="cambiarHoraNotificaciones($event)" />
+          </div>
         </div>
       </div>
-    }
-  </section>
+      <div class="config-card-body">
+        <div class="auto-notif-list">
+          <div class="auto-notif-card">
+            <div class="auto-notif-card-top">
+              <div class="auto-notif-icon"><re-icon name="clock" width="17" height="17"></re-icon></div>
+              <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
+                <input type="checkbox" [checked]="autoNotif30Dias()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso automático 30 días antes" (change)="toggleAutoNotificaciones('30Dias')" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="auto-notif-copy">
+              <strong>Aviso anticipado</strong>
+              <span>Enviar 30 días antes del vencimiento.</span>
+            </div>
+            <span class="auto-notif-label">{{ autoNotif30Dias() ? 'Activado' : 'Desactivado' }}</span>
+          </div>
+          <div class="auto-notif-card">
+            <div class="auto-notif-card-top">
+              <div class="auto-notif-icon"><re-icon name="mail" width="17" height="17"></re-icon></div>
+              <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
+                <input type="checkbox" [checked]="autoNotifVenceHoy()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar aviso el día del vencimiento" (change)="toggleAutoNotificaciones('VenceHoy')" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="auto-notif-copy">
+              <strong>Aviso el día de vencimiento</strong>
+              <span>Enviar el día en que vence la sepultura.</span>
+            </div>
+            <span class="auto-notif-label">{{ autoNotifVenceHoy() ? 'Activado' : 'Desactivado' }}</span>
+          </div>
+          <div class="auto-notif-card">
+            <div class="auto-notif-card-top">
+              <div class="auto-notif-icon"><re-icon name="refresh-cw" width="17" height="17"></re-icon></div>
+              <label class="toggle-switch" [class.toggle-switch-disabled]="autoNotifLoading() || autoNotifSaving()">
+                <input type="checkbox" [checked]="autoNotifVencidoRecordatorio()" [disabled]="autoNotifLoading() || autoNotifSaving()" aria-label="Activar recordatorio cada 7 días mientras esté vencido" (change)="toggleAutoNotificaciones('VencidoRecordatorio')" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+            <div class="auto-notif-copy">
+              <strong>Recordatorio de vencido</strong>
+              <span>Recordatorio cada 7 días mientras esté vencido.</span>
+            </div>
+            <span class="auto-notif-label">{{ autoNotifVencidoRecordatorio() ? 'Activado' : 'Desactivado' }}</span>
+          </div>
+        </div>
+        @if (autoNotifLastRun()) { <small class="config-muted">Último chequeo: {{ autoNotifLastRun() }}</small> }
+        @if (autoNotifError()) { <p class="config-error">{{ autoNotifError() }}</p> }
+      </div>
+    </section>
+
+  }
 
 </div>
