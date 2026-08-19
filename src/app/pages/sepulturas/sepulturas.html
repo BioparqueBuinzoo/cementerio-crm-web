@@ -6,30 +6,32 @@
         <h1>Sepulturas</h1>
       </div>
     </div>
-    <div class="sepulturas-actions">
-      <div class="rut-search-group">
-        <div class="sepulturas-search">
-          <re-icon name="search" class="search-icon" width="20" height="20"></re-icon>
-          <input class="search-input" type="text" placeholder="Buscar por Nº ficha…"
-            [value]="fichaInput()"
-            (input)="fichaInput.set($any($event.target).value)"
-            (keydown)="onKeydown($event)" />
-        </div>
-        <button class="btn-search" (click)="buscar()">Buscar</button>
-        @if (fichaInput()) {
-          <button class="btn-clear" (click)="limpiar()" title="Limpiar búsqueda">✕</button>
-        }
-      </div>
-    </div>
   </div>
 
   @if (filtersOpen()) {
     <div class="filters-panel">
-      <div class="filter-field filter-field-wide">
-        <label for="sepultura-type-filter">Tipo de sepultura</label>
-        <input id="sepultura-type-filter" type="text" placeholder="Ej: nicho, mausoleo…" [value]="tipoFilter()" (input)="tipoFilter.set($any($event.target).value)" (keydown.enter)="applyFilters()">
+      <div class="filter-field filter-field-search">
+        <label for="sepultura-ficha-filter">Nº de ficha</label>
+        <div class="filter-input-wrap">
+          <re-icon name="search" class="filter-search-icon" width="16" height="16"></re-icon>
+          <input id="sepultura-ficha-filter" type="text" inputmode="numeric" placeholder="Ej: 1234"
+            [value]="fichaInput()" (input)="fichaInput.set($any($event.target).value)"
+            (keydown.enter)="applyFilters()">
+        </div>
       </div>
-      <button class="filter-clear" (click)="clearFilters()">Limpiar filtros</button>
+      <div class="filter-field filter-field-search">
+        <label for="sepultura-rut-filter">RUT del cliente</label>
+        <div class="filter-input-wrap">
+          <re-icon name="search" class="filter-search-icon" width="16" height="16"></re-icon>
+          <input id="sepultura-rut-filter" type="text" placeholder="Ej: 12.345.678-9"
+            [value]="rutFilter()" (input)="onRutInput($any($event.target).value)"
+            (keydown.enter)="applyFilters()">
+        </div>
+      </div>
+      <button class="filter-clear" (click)="clearFilters()" [disabled]="activeFilters() === 0">
+        Limpiar filtros
+        @if (activeFilters() > 0) { <span class="filter-count">{{ activeFilters() }}</span> }
+      </button>
     </div>
   }
 

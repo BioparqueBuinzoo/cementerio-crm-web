@@ -687,12 +687,12 @@ export class ClienteDetalle {
 
     this.contratoForm = {
       fecha_pago: fechaPago,
-      fecha_vencimiento: '',
+      fecha_vencimiento: ultimo ? this.sumarAnualidad(ultimo.fecha_vencimiento) : '',
       valor_renovacion: montoSugerido,
       forma_pago: '', numero_comprobante: '', id_receptor: 0,
       id_pagador: this.cliente()?.id ?? 0,
     };
-    this.onFechaPagoChange(fechaPago);
+    if (!ultimo) this.onFechaPagoChange(fechaPago);
     this.montoContratoStr = montoSugerido > 0 ? this.formatCLP(montoSugerido) : '';
     this.contratoErrorMsg = '';
     this.loadingContrato = true;
@@ -784,7 +784,13 @@ export class ClienteDetalle {
       }
       const fechaPago = this.fechaLocalISO();
       this.contratoForm.fecha_pago = fechaPago;
-      this.onFechaPagoChange(fechaPago);
+      const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
+      const ultimo = sep ? this.ultimoContrato(sep.contratos) : null;
+      if (!ultimo) {
+        this.contratoErrorMsg = 'No se encontró el contrato anterior para calcular la renovación.';
+        return;
+      }
+      this.contratoForm.fecha_vencimiento = this.sumarAnualidad(ultimo.fecha_vencimiento);
     }
     if (!this.contratoForm.fecha_pago || !this.contratoForm.fecha_vencimiento || !this.contratoForm.valor_renovacion) return;
     this.savingContrato = true;
@@ -821,6 +827,13 @@ export class ClienteDetalle {
     const lastDay = new Date(Date.UTC(targetYear, month, 0)).getUTCDate();
     const expiration = new Date(Date.UTC(targetYear, month - 1, Math.min(day, lastDay)));
     this.contratoForm.fecha_vencimiento = expiration.toISOString().slice(0, 10);
+  }
+
+  private sumarAnualidad(fecha: string | Date): string {
+    const value = typeof fecha === 'string' ? fecha.slice(0, 10) : this.fechaLocalISO(fecha);
+    const [year, month, day] = value.split('-').map(Number);
+    const lastDay = new Date(Date.UTC(year + 1, month, 0)).getUTCDate();
+    return `${year + 1}-${String(month).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
   }
 
   get tituloModalContrato(): string {

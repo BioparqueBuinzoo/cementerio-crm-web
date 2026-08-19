@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal, inject, viewChild, ElementRef, CUS
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { SepulturaService } from '../../services/sepultura/sepultura.service';
+import { clean, format } from 'rut.js';
 
 @Component({
   selector: 'app-sepulturas',
@@ -25,8 +26,12 @@ export class Sepulturas implements OnInit {
   readonly total       = this.sepulturaService.total;
 
   readonly fichaInput = signal('');
+  readonly rutFilter = signal('');
   readonly filtersOpen = signal(true);
-  readonly tipoFilter = signal('');
+
+  readonly activeFilters = computed(() =>
+    [this.fichaInput(), this.rutFilter()].filter(value => value.trim()).length
+  );
 
   readonly pageNumbers = computed<(number | null)[]>(() => {
     const total = this.totalPages();
@@ -48,6 +53,11 @@ export class Sepulturas implements OnInit {
     this.loadFiltered(1);
   }
 
+  onRutInput(value: string): void {
+    const cleaned = clean(value);
+    this.rutFilter.set(cleaned.length > 0 ? format(cleaned) : value);
+  }
+
   limpiar(): void {
     this.fichaInput.set('');
     this.loadFiltered(1);
@@ -58,7 +68,8 @@ export class Sepulturas implements OnInit {
   applyFilters(): void { this.loadFiltered(1); }
 
   clearFilters(): void {
-    this.tipoFilter.set('');
+    this.fichaInput.set('');
+    this.rutFilter.set('');
     this.loadFiltered(1);
   }
 
@@ -89,8 +100,8 @@ export class Sepulturas implements OnInit {
 
   private loadFiltered(page: number): void {
     void this.sepulturaService.getAll(
-      page, 20, undefined, undefined, this.fichaInput().trim() || undefined,
-      undefined, this.tipoFilter().trim() || undefined
+      page, 20, undefined, this.rutFilter().trim() || undefined,
+      this.fichaInput().trim() || undefined
     );
   }
 }
