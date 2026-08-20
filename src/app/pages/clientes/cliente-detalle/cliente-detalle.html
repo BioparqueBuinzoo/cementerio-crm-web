@@ -322,7 +322,12 @@
                     </div>
                     <div class="ca-field">
                       <span class="info-label">N° Comprobante</span>
-                      <span class="info-value">{{ uc.numero_comprobante || '—' }}</span>
+                      <span class="info-value">
+                        {{ uc.numero_comprobante || '—' }}
+                        <button type="button" class="btn-editar-boleta" (click)="abrirModalEditBoleta(uc, sep.id)" title="Corregir n° de comprobante (solo para errores de tipeo)">
+                          <re-icon name="edit-2" width="13" height="13"></re-icon>
+                        </button>
+                      </span>
                     </div>
                   </div>
                   <div class="contrato-regla-vigencia">
@@ -1231,6 +1236,36 @@
           <button class="btn-cancel" (click)="cerrarModalEditContrato()">Cancelar</button>
           <button class="btn-save" (click)="guardarEditContrato()" [disabled]="savingEditContrato || !editContratoForm.valor_renovacion">
             {{ savingEditContrato ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal Editar boleta (n° comprobante) ─────────── -->
+  @if (modalEditBoletaVisible) {
+    <div class="modal-overlay" (click)="cerrarModalEditBoleta()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Corregir n° de comprobante</h3>
+          <button class="modal-close" (click)="cerrarModalEditBoleta()">
+            <re-icon name="x" width="16" height="16"></re-icon>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">Usa esto solo para corregir un error de tipeo en el n° de comprobante de este contrato.</p>
+          @if (editBoletaErrorMsg) {
+            <div class="modal-error">{{ editBoletaErrorMsg }}</div>
+          }
+          <div class="form-field form-field-full">
+            <label>N° Comprobante</label>
+            <input type="text" [(ngModel)]="editBoletaForm.numero_comprobante" placeholder="Número de comprobante" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="cerrarModalEditBoleta()">Cancelar</button>
+          <button class="btn-save" (click)="guardarEditBoleta()" [disabled]="savingEditBoleta">
+            {{ savingEditBoleta ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </div>

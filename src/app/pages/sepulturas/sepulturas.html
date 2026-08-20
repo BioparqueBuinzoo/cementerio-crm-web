@@ -28,6 +28,15 @@
             (keydown.enter)="applyFilters()">
         </div>
       </div>
+      <div class="filter-field filter-field-search">
+        <label for="sepultura-numero-filter">Nº de sepultura</label>
+        <div class="filter-input-wrap">
+          <re-icon name="search" class="filter-search-icon" width="16" height="16"></re-icon>
+          <input id="sepultura-numero-filter" type="text" inputmode="numeric" placeholder="Ej: 42"
+            [value]="sepulturaInput()" (input)="sepulturaInput.set($any($event.target).value)"
+            (keydown.enter)="applyFilters()">
+        </div>
+      </div>
       <button class="filter-clear" (click)="clearFilters()" [disabled]="activeFilters() === 0">
         Limpiar filtros
         @if (activeFilters() > 0) { <span class="filter-count">{{ activeFilters() }}</span> }
@@ -57,7 +66,7 @@
         <table class="sepulturas-table">
           <thead>
             <tr>
-              <th>Id</th>
+              <th>Nº Sepultura</th>
               <th>Cliente / RUT</th>
               <th>Nº Ficha</th>
               <th>Tipo</th>

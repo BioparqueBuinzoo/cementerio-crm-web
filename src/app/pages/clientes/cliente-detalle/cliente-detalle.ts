@@ -276,6 +276,52 @@ export class ClienteDetalle {
     }
   }
 
+  // Modal editar boleta (corrección de errores de tipeo en el n° de comprobante)
+  modalEditBoletaVisible = false;
+  savingEditBoleta = false;
+  editBoletaErrorMsg = '';
+  editingBoletaContratoId: number | null = null;
+  editingBoletaSepId: number | null = null;
+  editBoletaForm: { numero_comprobante: string } = { numero_comprobante: '' };
+
+  abrirModalEditBoleta(contrato: Contrato, sepId: number): void {
+    this.editingBoletaContratoId = contrato.id;
+    this.editingBoletaSepId = sepId;
+    this.editBoletaForm = { numero_comprobante: contrato.numero_comprobante ?? '' };
+    this.editBoletaErrorMsg = '';
+    this.modalEditBoletaVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarModalEditBoleta(): void { this.modalEditBoletaVisible = false; this.cdr.markForCheck(); }
+
+  async guardarEditBoleta(): Promise<void> {
+    if (!this.editingBoletaContratoId || !this.editingBoletaSepId) return;
+    if (!this.editBoletaForm.numero_comprobante.trim()) {
+      this.editBoletaErrorMsg = 'El n° de comprobante no puede estar vacío';
+      return;
+    }
+    this.savingEditBoleta = true;
+    this.editBoletaErrorMsg = '';
+    try {
+      await this.contratoService.update(this.editingBoletaContratoId, {
+        numero_comprobante: this.editBoletaForm.numero_comprobante.trim(),
+      });
+      const actualizadas = this.sepulturasConDatos().map(async (sep) => {
+        if (sep.id !== this.editingBoletaSepId) return sep;
+        const contratos = await this.contratoService.getByIdSepultura(sep.id);
+        return { ...sep, contratos };
+      });
+      this.sepulturasConDatos.set(await Promise.all(actualizadas));
+      this.modalEditBoletaVisible = false;
+    } catch (e: any) {
+      this.editBoletaErrorMsg = e?.error?.error ?? 'Error al actualizar el n° de comprobante';
+    } finally {
+      this.savingEditBoleta = false;
+      this.cdr.markForCheck();
+    }
+  }
+
   // Modal editar mascota
   modalEditMascotaVisible = false;
   savingEditMascota = false;

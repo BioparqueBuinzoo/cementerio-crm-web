@@ -26,7 +26,7 @@ export class SepulturaService {
   private requestToken = 0;
 
   async getAll(
-    page: number = 1, limit: number = 20, idCliente?: number, rut?: string, numeroFicha?: string, estado?: string, tipo?: string
+    page: number = 1, limit: number = 20, idCliente?: number, rut?: string, numeroFicha?: string, estado?: string, tipo?: string, numeroSepultura?: number
   ): Promise<void> {
     const token = ++this.requestToken;
     try {
@@ -38,6 +38,7 @@ export class SepulturaService {
       if (numeroFicha) url += `&numero_ficha=${encodeURIComponent(numeroFicha)}`;
       if (estado) url += `&estado=${encodeURIComponent(estado)}`;
       if (tipo) url += `&tipo=${encodeURIComponent(tipo)}`;
+      if (numeroSepultura != null) url += `&numero_sepultura=${numeroSepultura}`;
       const response = await firstValueFrom(
         this.http.get<SepulturaPaginatedResult>(url),
       );

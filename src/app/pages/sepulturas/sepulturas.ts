@@ -27,10 +27,11 @@ export class Sepulturas implements OnInit {
 
   readonly fichaInput = signal('');
   readonly rutFilter = signal('');
+  readonly sepulturaInput = signal('');
   readonly filtersOpen = signal(true);
 
   readonly activeFilters = computed(() =>
-    [this.fichaInput(), this.rutFilter()].filter(value => value.trim()).length
+    [this.fichaInput(), this.rutFilter(), this.sepulturaInput()].filter(value => value.trim()).length
   );
 
   readonly pageNumbers = computed<(number | null)[]>(() => {
@@ -70,6 +71,7 @@ export class Sepulturas implements OnInit {
   clearFilters(): void {
     this.fichaInput.set('');
     this.rutFilter.set('');
+    this.sepulturaInput.set('');
     this.loadFiltered(1);
   }
 
@@ -99,9 +101,11 @@ export class Sepulturas implements OnInit {
   }
 
   private loadFiltered(page: number): void {
+    const sepulturaTrim = this.sepulturaInput().trim();
     void this.sepulturaService.getAll(
       page, 20, undefined, this.rutFilter().trim() || undefined,
-      this.fichaInput().trim() || undefined
+      this.fichaInput().trim() || undefined, undefined, undefined,
+      sepulturaTrim ? Number(sepulturaTrim) : undefined
     );
   }
 }
