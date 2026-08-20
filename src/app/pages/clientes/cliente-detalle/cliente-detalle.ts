@@ -611,6 +611,10 @@ export class ClienteDetalle {
     return (formaPago ?? '').toLowerCase().includes('flow') ? 'Portal Flow' : 'Registro manual';
   }
 
+  montoRealPagado(c: Contrato): number {
+    return c.monto_pagado_real ?? c.valor_renovacion;
+  }
+
   get esRenovacionContrato(): boolean {
     if (!this.contratoSepId) return false;
     return Boolean(this.sepulturasConDatos().find(s => s.id === this.contratoSepId)?.contratos.length);
@@ -1158,7 +1162,7 @@ export class ClienteDetalle {
             .map(c => [
               this.formatFechaPdf(c.fecha_pago),
               this.formatFechaPdf(c.fecha_vencimiento),
-              this.formatCLP(c.valor_renovacion),
+              this.formatCLP(this.montoRealPagado(c)),
               c.forma_pago || '—',
               c.numero_comprobante || '—',
             ]),

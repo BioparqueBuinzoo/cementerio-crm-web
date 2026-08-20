@@ -314,7 +314,7 @@
                     </div>
                     <div class="ca-field">
                       <span class="info-label">Monto pagado</span>
-                      <span class="info-value info-value-money">{{ formatCLP(uc.valor_renovacion) }}</span>
+                      <span class="info-value info-value-money">{{ formatCLP(montoRealPagado(uc)) }}</span>
                     </div>
                     <div class="ca-field">
                       <span class="info-label">Forma de pago</span>
@@ -332,7 +332,7 @@
                   </div>
                   <div class="contrato-regla-vigencia">
                     <span>1 anualidad</span>
-                    <span>Vigencia desde el pago</span>
+                    <span>Vigencia desde el vencimiento anterior</span>
                     @if (uc.descuento_renovacion_porcentaje != null) {
                       <span class="chip-descuento-activo">
                         <re-icon name="zap" width="12" height="12"></re-icon>
@@ -358,7 +358,7 @@
                         <span class="historial-dot"></span>
                         <div class="historial-evento-main">
                           <div class="historial-evento-title">
-                            <strong>Pago {{ formatCLP(c.valor_renovacion) }}</strong>
+                            <strong>Pago {{ formatCLP(montoRealPagado(c)) }}</strong>
                             <span class="origen-chip">{{ origenPago(c.forma_pago) }}</span>
                           </div>
                           <span>

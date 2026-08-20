@@ -7,6 +7,7 @@ export interface Contrato {
   descuento_renovacion_porcentaje: number | null;
   forma_pago: string;
   numero_comprobante: string;
+  monto_pagado_real: number | null;
   id_receptor: number;
   id_pagador: number;
   fecha_creacion: string;
