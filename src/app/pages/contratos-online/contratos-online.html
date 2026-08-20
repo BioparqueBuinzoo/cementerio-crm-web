@@ -3,7 +3,7 @@
     <div class="toolbar-title">
       <div>
         <span class="eyebrow">GESTIÓN DE CONTRATOS</span>
-        <h1>Contratos online</h1>
+        <h1>Contratos ventas web</h1>
       </div>
     </div>
     <button class="btn-export" type="button" (click)="exportar()" [disabled]="exportando" title="Exportar listado a Excel">
@@ -16,7 +16,7 @@
     <article class="overview-card overview-card-primary">
       <div class="overview-icon"><re-icon name="envelope" width="22" height="22"></re-icon></div>
       <div class="overview-copy">
-        <span class="overview-label">Renovaciones online</span>
+        <span class="overview-label">Renovaciones ventas web</span>
         @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ total }}</strong> }
         <small>Pagadas por el portal de pagos</small>
       </div>
@@ -64,7 +64,7 @@
             @if (!loading) {
               <tr><td colspan="9" class="empty-row">
                 <re-icon name="envelope" width="34" height="34"></re-icon>
-                <strong>Sin renovaciones online todavía</strong>
+                <strong>Sin renovaciones ventas web todavía</strong>
                 <span>Las renovaciones pagadas por el portal de pagos aparecerán aquí.</span>
               </td></tr>
             }

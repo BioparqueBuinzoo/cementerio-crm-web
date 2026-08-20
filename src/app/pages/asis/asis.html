@@ -97,11 +97,11 @@
         @if (vencidosCount() > 0) { <span class="nav-badge nav-badge-danger">{{ isSidebarOpen() ? vencidosCount() : '!' }}</span> }
       </a>
       <!-- CONTRATOS ONLINE -->
-      <a routerLink="/asis/contratos-online" routerLinkActive="active" class="nav-item" data-tooltip="Contratos online" [attr.title]="isSidebarOpen() ? null : 'Contratos online'" (click)="closeSidebarOnMobile()">
+      <a routerLink="/asis/contratos-online" routerLinkActive="active" class="nav-item" data-tooltip="Contratos ventas web" [attr.title]="isSidebarOpen() ? null : 'Contratos ventas web'" (click)="closeSidebarOnMobile()">
         <span class="nav-icon">
           <re-icon name="envelope" width="20" height="20"></re-icon>
         </span>
-        @if (isSidebarOpen()) { <span class="nav-text">ONLINE</span> }
+        @if (isSidebarOpen()) { <span class="nav-text">VENTAS WEB</span> }
       </a>
       <span class="nav-section-label" data-section-short="A" [class.nav-section-label-collapsed]="!isSidebarOpen()">Administración</span>
       <!-- CONFIGURACION -->
