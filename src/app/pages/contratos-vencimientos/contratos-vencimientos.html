@@ -7,6 +7,10 @@
         <p>{{ isExpired ? 'Contratos pendientes de renovación' : 'Seguimiento de renovaciones próximas' }}</p>
       </div>
     </div>
+    <button class="btn-export" type="button" (click)="exportar()" [disabled]="exportando" title="Exportar listado a Excel">
+      <re-icon name="download" width="14" height="14"></re-icon>
+      {{ exportando ? 'Descargando…' : 'Exportar Excel' }}
+    </button>
     <button
       class="btn-notify-all"
       type="button"

@@ -688,8 +688,7 @@ export class ClienteDetalle {
   }
 
   puedeRenovarContrato(contratos: Contrato[]): boolean {
-    const ultimo = this.ultimoContrato(contratos);
-    return ultimo !== null && this.estadoContrato(ultimo.fecha_vencimiento as unknown as string) !== 'vigente';
+    return this.ultimoContrato(contratos) !== null;
   }
 
   private fechaLocalISO(fecha = new Date()): string {

@@ -46,6 +46,7 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
 
   totalAmount = 0;
   overviewLoading = true;
+  exportando = false;
 
   ngOnInit(): void {
     this.load(1);
@@ -225,4 +226,21 @@ export class ContratosVencimientos implements OnInit, OnDestroy {
   }
 
   goToClient(id: number): void { void this.router.navigate(['/asis/clientes', id]); }
+
+  exportar(): void {
+    this.exportando = true;
+    this.statsService.exportarVencimientos(this.notificationType).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.notificationType === 'vencidas' ? 'contratos-vencidos.csv' : 'contratos-por-vencer.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.exportando = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.exportando = false; this.cdr.markForCheck(); },
+    });
+  }
 }
