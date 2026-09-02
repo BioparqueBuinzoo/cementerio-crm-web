@@ -11,14 +11,13 @@ import { Sepultura, CrearSepulturaDto } from '../../../models/sepulturas.model';
 import { MascotaService } from '../../../services/mascota/mascota.service';
 import { Mascota, CrearMascotaDto } from '../../../models/mascotas.model';
 import { ContratoService } from '../../../services/contrato/contrato.service';
-import { Contrato, CrearContratoDto } from '../../../models/contratos.model';
+import { Contrato, CrearContratoDto, RenovacionCalculada } from '../../../models/contratos.model';
 import { TipoSepulturaService, TipoSepultura } from '../../../services/tipo-sepultura/tipo-sepultura.service';
 import { LookupService, FormaPago, Encargado } from '../../../services/lookup/lookup.service';
 import { ContactoService } from '../../../services/contacto/contacto.service';
 import { ObservacionClienteService, ObservacionCliente } from '../../../services/observacion-cliente/observacion-cliente.service';
 import { AuthService } from '../../../services/auth/auth.service';
 import { DashboardStatsService, NotificationType } from '../../../services/dashboard-stats/dashboard-stats.service';
-import { nextAmount, roundCashTotalChile } from '../../../lib/renewal';
 import { validate, format, clean } from 'rut.js';
 
 export interface SepulturaConDatos extends Sepultura {
@@ -401,9 +400,7 @@ export class ClienteDetalle {
   }
 
   sepulturasVisibles(): SepulturaConDatos[] {
-    return this.sepulturasConDatos().filter(
-      sep => this.estadoEfectivo(sep).css !== 'terminado',
-    );
+    return this.sepulturasConDatos();
   }
 
   // Modal nuevo contacto
@@ -620,22 +617,98 @@ export class ClienteDetalle {
     return Boolean(this.sepulturasConDatos().find(s => s.id === this.contratoSepId)?.contratos.length);
   }
 
-  get montoBaseRenovacion(): number {
-    if (!this.contratoSepId) return 0;
-    const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
-    return this.ultimoContrato(sep?.contratos ?? [])?.valor_renovacion ?? 0;
-  }
-
   /** Descuento especial del contrato que se está renovando (null = recargo normal del 6%). */
   get descuentoRenovacion(): number | null {
     if (!this.contratoSepId) return null;
     const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
-    return this.ultimoContrato(sep?.contratos ?? [])?.descuento_renovacion_porcentaje ?? null;
+    const contrato = this.ultimoContrato(sep?.contratos ?? []);
+    return contrato ? this.descuentoContrato(contrato) : null;
   }
 
+  /** Convierte el DECIMAL que puede venir como string en tiempo de ejecución.
+   *  Cero equivale a no tener una oferta de descuento configurada. */
+  descuentoContrato(contrato: Contrato): number | null {
+    const raw: unknown = contrato.descuento_renovacion_porcentaje;
+    if (raw == null || raw === '') return null;
+    const porcentaje = Number(raw);
+    return Number.isFinite(porcentaje) && porcentaje > 0 ? porcentaje : null;
+  }
+
+  /** Contrato que se está renovando (el más reciente de la sepultura del modal). */
+  private get ultimoContratoRenovacion(): Contrato | null {
+    if (!this.contratoSepId) return null;
+    const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
+    return this.ultimoContrato(sep?.contratos ?? []);
+  }
+
+  /** Monto del último pago registrado (base sobre la que se calcula esta renovación). */
+  get montoUltimoPago(): number {
+    return this.ultimoContratoRenovacion?.valor_renovacion ?? 0;
+  }
+
+  /** Resultado del cálculo de renovación pedido a crm-api (fuente de verdad del monto
+   *  y de cuántos períodos/años vencidos cubre este pago — ver calcularRenovacion()). */
+  renovacionCalculada = signal<RenovacionCalculada | null>(null);
+  calculandoRenovacion = signal(false);
+
   get montoTotalRenovacion(): number {
-    const total = nextAmount(this.montoBaseRenovacion, this.descuentoRenovacion);
-    return this.esPagoEfectivo() ? roundCashTotalChile(total) : total;
+    return this.renovacionCalculada()?.total ?? 0;
+  }
+
+  get fechaVencimientoRenovacionAnterior(): string {
+    return this.ultimoContratoRenovacion?.fecha_vencimiento ?? '';
+  }
+
+  get recargoRenovacionPorcentaje(): number {
+    const primerPeriodo = this.renovacionCalculada()?.detalle?.[0];
+    if (!primerPeriodo || !this.montoUltimoPago) return 6;
+    const porcentaje = ((primerPeriodo / this.montoUltimoPago) - 1) * 100;
+    return Math.round(porcentaje * 100) / 100;
+  }
+
+  formatFechaRenovacion(value: string): string {
+    if (!value) return '—';
+    const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+    if (!year || !month || !day) return '—';
+    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${String(day).padStart(2, '0')} ${meses[month - 1]} ${year}`;
+  }
+
+  /** Texto tipo "$30.000 → $31.800 → $33.708 → $35.730" mostrando cómo se compuso
+   *  cada período vencido hasta llegar al total (con un último salto al total final
+   *  si el descuento o el redondeo en efectivo hicieron que difiera del subtotal). */
+  get calculoRenovacionTexto(): string {
+    const r = this.renovacionCalculada();
+    if (!r?.detalle?.length) return '';
+    const pasos = [this.montoUltimoPago, ...r.detalle].map(v => this.formatCLP(v)).join(' → ');
+    return r.subtotal === r.total ? pasos : `${pasos} → ${this.formatCLP(r.total)}`;
+  }
+
+  /** Pide a crm-api el monto/fecha de vencimiento correctos para la renovación en curso
+   *  (recargo vigente + períodos vencidos compuestos + descuento + redondeo en efectivo —
+   *  ver crm-api::calcularRenovacion). Nunca se recalcula en el frontend: crm-web solo
+   *  muestra lo que el backend devuelve, y es lo mismo que luego valida al guardar. */
+  private async recalcularRenovacion(): Promise<void> {
+    const ultimo = this.ultimoContratoRenovacion;
+    if (!ultimo) { this.renovacionCalculada.set(null); return; }
+    this.calculandoRenovacion.set(true);
+    try {
+      const [resultado] = await this.contratoService.calcularRenovacion([{
+        valorRenovacion: ultimo.valor_renovacion,
+        descuentoPorcentaje: this.descuentoContrato(ultimo),
+        formaPago: this.contratoForm.forma_pago,
+        fechaVencimiento: ultimo.fecha_vencimiento,
+      }]);
+      this.renovacionCalculada.set(resultado);
+      this.contratoForm.valor_renovacion = resultado.total;
+      this.contratoForm.fecha_vencimiento = resultado.fechaVencimientoNueva;
+      this.montoContratoStr = this.formatCLP(resultado.total);
+    } catch (e: any) {
+      this.contratoErrorMsg = e?.error?.error ?? 'Error al calcular el monto de la renovación';
+    } finally {
+      this.calculandoRenovacion.set(false);
+      this.cdr.markForCheck();
+    }
   }
 
   puedeAplicarDescuento(): boolean {
@@ -678,13 +751,9 @@ export class ClienteDetalle {
     }
   }
 
-  private esPagoEfectivo(): boolean {
-    return this.contratoForm.forma_pago.trim().toLocaleLowerCase('es-CL').includes('efectivo');
-  }
-
   onFormaPagoRenovacionChange(formaPago: string): void {
     this.contratoForm.forma_pago = formaPago;
-    this.montoContratoStr = this.montoBaseRenovacion > 0 ? this.formatMontoRenovacion(this.montoTotalRenovacion) : '';
+    void this.recalcularRenovacion();
   }
 
   puedeRenovarContrato(contratos: Contrato[]): boolean {
@@ -732,17 +801,17 @@ export class ClienteDetalle {
 
     const sep = this.sepulturasConDatos().find(s => s.id === idSepultura);
     const ultimo = sep ? this.ultimoContrato(sep.contratos) : null;
-    const montoSugerido = ultimo ? nextAmount(ultimo.valor_renovacion, ultimo.descuento_renovacion_porcentaje) : 0;
 
+    this.renovacionCalculada.set(null);
     this.contratoForm = {
       fecha_pago: fechaPago,
-      fecha_vencimiento: ultimo ? this.sumarAnualidad(ultimo.fecha_vencimiento) : '',
-      valor_renovacion: montoSugerido,
+      fecha_vencimiento: '',
+      valor_renovacion: 0,
       forma_pago: '', numero_comprobante: '', id_receptor: 0,
       id_pagador: this.cliente()?.id ?? 0,
     };
     if (!ultimo) this.onFechaPagoChange(fechaPago);
-    this.montoContratoStr = montoSugerido > 0 ? this.formatCLP(montoSugerido) : '';
+    this.montoContratoStr = '';
     this.contratoErrorMsg = '';
     this.loadingContrato = true;
     this.modalContratoVisible = true;
@@ -751,7 +820,7 @@ export class ClienteDetalle {
       const formas = await this.lookupService.getFormasPago();
       this.formasPago = formas;
       this.contratoForm.forma_pago = formas[0]?.nombre ?? '';
-      this.montoContratoStr = montoSugerido > 0 ? this.formatMontoRenovacion(this.montoTotalRenovacion) : '';
+      if (ultimo) await this.recalcularRenovacion();
     } catch (e: any) {
       this.contratoErrorMsg = e?.error?.error ?? 'Error al cargar los datos del formulario';
     } finally {
@@ -765,7 +834,7 @@ export class ClienteDetalle {
   abrirModalDescuento(idSepultura: number, contrato: Contrato): void {
     this.descuentoSepId = idSepultura;
     this.descuentoContratoId = contrato.id;
-    this.descuentoPorcentaje = contrato.descuento_renovacion_porcentaje;
+    this.descuentoPorcentaje = this.descuentoContrato(contrato);
     this.descuentoErrorMsg = '';
     this.modalDescuentoVisible = true;
     this.cdr.markForCheck();
@@ -775,11 +844,12 @@ export class ClienteDetalle {
 
   async guardarDescuento(): Promise<void> {
     if (!this.descuentoContratoId) return;
-    const porcentaje = this.descuentoPorcentaje;
-    if (porcentaje !== null && (!Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100)) {
-      this.descuentoErrorMsg = 'Ingresa un porcentaje entre 0 y 100, o deja vacío para quitar el descuento.';
+    const valorIngresado = this.descuentoPorcentaje;
+    if (valorIngresado !== null && (!Number.isFinite(valorIngresado) || valorIngresado < 0 || valorIngresado > 100)) {
+      this.descuentoErrorMsg = 'Ingresa un porcentaje mayor que 0 y hasta 100, o deja vacío para quitar el descuento.';
       return;
     }
+    const porcentaje = valorIngresado === 0 ? null : valorIngresado;
     this.savingDescuento = true;
     this.descuentoErrorMsg = '';
     try {
@@ -831,15 +901,14 @@ export class ClienteDetalle {
         this.contratoErrorMsg = 'Selecciona el medio de pago e ingresa el número de boleta.';
         return;
       }
-      const fechaPago = this.fechaLocalISO();
-      this.contratoForm.fecha_pago = fechaPago;
-      const sep = this.sepulturasConDatos().find(s => s.id === this.contratoSepId);
-      const ultimo = sep ? this.ultimoContrato(sep.contratos) : null;
-      if (!ultimo) {
-        this.contratoErrorMsg = 'No se encontró el contrato anterior para calcular la renovación.';
+      // fecha_vencimiento y valor_renovacion ya vienen del último cálculo pedido a
+      // crm-api (recalcularRenovacion) — nunca se recalculan acá, para no divergir
+      // del monto que el backend luego valida al guardar (ver contrato.repository.ts).
+      if (this.calculandoRenovacion() || !this.renovacionCalculada()) {
+        this.contratoErrorMsg = 'Espera a que termine de calcularse el monto de la renovación.';
         return;
       }
-      this.contratoForm.fecha_vencimiento = this.sumarAnualidad(ultimo.fecha_vencimiento);
+      this.contratoForm.fecha_pago = this.fechaLocalISO();
     }
     if (!this.contratoForm.fecha_pago || !this.contratoForm.fecha_vencimiento || !this.contratoForm.valor_renovacion) return;
     this.savingContrato = true;
@@ -876,13 +945,6 @@ export class ClienteDetalle {
     const lastDay = new Date(Date.UTC(targetYear, month, 0)).getUTCDate();
     const expiration = new Date(Date.UTC(targetYear, month - 1, Math.min(day, lastDay)));
     this.contratoForm.fecha_vencimiento = expiration.toISOString().slice(0, 10);
-  }
-
-  private sumarAnualidad(fecha: string | Date): string {
-    const value = typeof fecha === 'string' ? fecha.slice(0, 10) : this.fechaLocalISO(fecha);
-    const [year, month, day] = value.split('-').map(Number);
-    const lastDay = new Date(Date.UTC(year + 1, month, 0)).getUTCDate();
-    return `${year + 1}-${String(month).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
   }
 
   get tituloModalContrato(): string {

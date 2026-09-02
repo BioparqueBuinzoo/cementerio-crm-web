@@ -36,7 +36,7 @@
         <div class="overview-copy">
           <span class="overview-label">{{ isExpired ? 'Monto total pendiente' : 'Monto total a renovar' }}</span>
           @if (overviewLoading) { <span class="overview-value-skeleton"></span> } @else { <strong>{{ formatCurrency(totalAmount) }}</strong> }
-          <small>Valor de renovación registrado</small>
+          <small>{{ isExpired ? 'Incluye anualidades vencidas y recargos' : 'Incluye recargo vigente' }}</small>
         </div>
       </article>
       <article class="overview-card overview-card-notification">
@@ -78,7 +78,7 @@
           <tr>
             <th>#</th><th>Ficha</th><th>Cliente</th><th>Tipo</th>
             <th>{{ isExpired ? 'Venció' : 'Vence' }}</th>
-            <th>{{ isExpired ? 'Atraso' : 'Días' }}</th><th>Monto renovación</th>
+            <th>{{ isExpired ? 'Atraso' : 'Días' }}</th><th>{{ isExpired ? 'Monto pendiente' : 'Próximo pago' }}</th>
             <th>Notificar</th><th>Ficha</th>
           </tr>
         </thead>
@@ -95,7 +95,7 @@
                   {{ formatDays(item.dias_restantes) }}
                 </span>
               </td>
-              <td class="col-amount">{{ formatCurrency(item.valor_renovacion) }}</td>
+              <td class="col-amount">{{ formatCurrency(item.monto_renovacion_calculado ?? item.valor_renovacion) }}</td>
               <td class="col-notification">
                 <button
                   class="btn-notify-one"

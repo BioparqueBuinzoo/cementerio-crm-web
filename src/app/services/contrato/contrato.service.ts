@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Contrato, ContratoPaginatedResult, CrearContratoDto } from '../../models/contratos.model';
+import { CalcularRenovacionItem, Contrato, ContratoPaginatedResult, CrearContratoDto, RenovacionCalculada } from '../../models/contratos.model';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
@@ -24,6 +24,13 @@ export class ContratoService {
     return firstValueFrom(
       this.http.patch<Contrato>(`${this.baseUrl}/${id}/descuento`, { descuento_renovacion_porcentaje: descuentoPorcentaje }),
     );
+  }
+
+  async calcularRenovacion(items: CalcularRenovacionItem[]): Promise<RenovacionCalculada[]> {
+    const response = await firstValueFrom(
+      this.http.post<{ items: RenovacionCalculada[] }>(`${this.baseUrl}/renovacion/calcular`, { items }),
+    );
+    return response.items;
   }
 
   async getByIdSepultura(idSepultura: number): Promise<Contrato[]> {

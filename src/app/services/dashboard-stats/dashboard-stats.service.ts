@@ -35,6 +35,9 @@ export interface VencimientoItem {
   fecha_vencimiento: string;
   dias_restantes: number;
   valor_renovacion: number;
+  descuento_renovacion_porcentaje?: number | null;
+  monto_renovacion_calculado?: number;
+  periodos_renovacion?: number;
 }
 
 export interface VencimientosPaginados {

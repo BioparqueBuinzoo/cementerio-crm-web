@@ -176,7 +176,7 @@
       @if (sepulturasExpanded) {
 
       @if (!loading() && sepulturasVisibles().length === 0) {
-        <p class="empty-msg">Este cliente no tiene sepulturas activas.</p>
+        <p class="empty-msg">Este cliente no tiene sepulturas registradas.</p>
       }
 
       @for (sep of sepulturasVisibles(); track sep.id) {
@@ -287,7 +287,7 @@
                         @if (puedeAplicarDescuento()) {
                           <button class="btn-descuento-contrato" (click)="abrirModalDescuento(sep.id, uc)" title="Aplicar oferta especial de descuento a la próxima renovación">
                             <re-icon name="zap" width="14" height="14"></re-icon>
-                            {{ uc.descuento_renovacion_porcentaje != null ? 'Editar descuento' : 'Aplicar descuento' }}
+                            {{ descuentoContrato(uc) != null ? 'Editar descuento' : 'Aplicar descuento' }}
                           </button>
                         }
                       </div>
@@ -333,10 +333,10 @@
                   <div class="contrato-regla-vigencia">
                     <span>1 anualidad</span>
                     <span>Vigencia desde el vencimiento anterior</span>
-                    @if (uc.descuento_renovacion_porcentaje != null) {
+                    @if (descuentoContrato(uc); as descuento) {
                       <span class="chip-descuento-activo">
                         <re-icon name="zap" width="12" height="12"></re-icon>
-                        Descuento especial: {{ uc.descuento_renovacion_porcentaje }}%
+                        Descuento especial: {{ descuento }}%
                       </span>
                     } @else {
                       <span>Recargo de renovación: 6%</span>
@@ -536,12 +536,19 @@
   <!-- ── Modal Contrato ───────────────────────────────── -->
   @if (modalContratoVisible) {
     <div class="modal-overlay" (click)="cerrarModalContrato()">
-      <div class="modal-content modal-content-lg" (click)="$event.stopPropagation()">
+      <div class="modal-content modal-content-lg" [class.renewal-modal]="esRenovacionContrato" (click)="$event.stopPropagation()">
 
         <div class="modal-header">
-          <h3>{{ tituloModalContrato }}</h3>
-          <button class="modal-close" (click)="cerrarModalContrato()">
-            <re-icon name="x" width="16" height="16"></re-icon>
+          <div class="modal-title-group">
+            @if (esRenovacionContrato) {
+              <span class="renewal-header-icon" aria-hidden="true">
+                <re-icon name="refresh-cw" width="22" height="22"></re-icon>
+              </span>
+            }
+            <h3>{{ tituloModalContrato }}</h3>
+          </div>
+          <button class="modal-close" type="button" aria-label="Cerrar" (click)="cerrarModalContrato()">
+            <re-icon name="x" width="20" height="20"></re-icon>
           </button>
         </div>
 
@@ -554,6 +561,154 @@
               <div class="modal-spinner"></div>
               Cargando...
             </div>
+          } @else if (esRenovacionContrato) {
+            <div class="renovacion-policy">
+              <div class="renewal-policy-item">
+                <span class="renewal-policy-icon renewal-policy-icon-muted" aria-hidden="true">
+                  <re-icon name="calendar" width="22" height="22"></re-icon>
+                </span>
+                <div>
+                  <span class="renovacion-policy-label">Último pago</span>
+                  <strong class="renewal-policy-money">{{ formatCLP(montoUltimoPago) }}</strong>
+                </div>
+              </div>
+              <div class="renewal-policy-item">
+                <span class="renewal-policy-icon" aria-hidden="true">
+                  <re-icon name="calendar-check" width="22" height="22"></re-icon>
+                </span>
+                <div>
+                  <span class="renovacion-policy-label">Períodos vencidos</span>
+                  <strong>
+                    {{ renovacionCalculada()?.periodos ?? 1 }}
+                    {{ (renovacionCalculada()?.periodos ?? 1) === 1 ? 'anualidad' : 'anualidades' }}
+                  </strong>
+                </div>
+              </div>
+              <div class="renewal-policy-item">
+                <span class="renewal-policy-icon" aria-hidden="true">
+                  <re-icon name="percent" width="22" height="22"></re-icon>
+                </span>
+                <div>
+                  <span class="renovacion-policy-label">Recargo</span>
+                  <strong>{{ recargoRenovacionPorcentaje }}% anual</strong>
+                </div>
+              </div>
+            </div>
+
+            @if (renovacionCalculada()) {
+              <div class="renewal-notice" role="status">
+                <span class="renewal-notice-icon" aria-hidden="true">
+                  <re-icon name="alert" width="22" height="22"></re-icon>
+                </span>
+                <div>
+                  <strong>
+                    Renovación por {{ renovacionCalculada()!.periodos }}
+                    {{ renovacionCalculada()!.periodos === 1 ? 'anualidad vencida' : 'anualidades vencidas' }}
+                  </strong>
+                  <p>
+                    Pago registrado el {{ formatFechaRenovacion(contratoForm['fecha_pago']) }}.
+                    Al confirmar, la cobertura avanzará desde
+                    {{ formatFechaRenovacion(fechaVencimientoRenovacionAnterior) }} hasta
+                    <b>{{ formatFechaRenovacion(contratoForm['fecha_vencimiento']) }}</b>.
+                  </p>
+                </div>
+              </div>
+            }
+
+            <div class="renewal-period">
+              <div class="renewal-date-card">
+                <span class="renewal-date-icon" aria-hidden="true">
+                  <re-icon name="calendar" width="25" height="25"></re-icon>
+                </span>
+                <div>
+                  <span>Vencimiento anterior</span>
+                  <strong>{{ formatFechaRenovacion(fechaVencimientoRenovacionAnterior) }}</strong>
+                </div>
+              </div>
+              <span class="renewal-period-arrow" aria-hidden="true">
+                <re-icon name="arrow-forward" width="24" height="24"></re-icon>
+              </span>
+              <div class="renewal-date-card">
+                <span class="renewal-date-icon" aria-hidden="true">
+                  <re-icon name="shield-check" width="25" height="25"></re-icon>
+                </span>
+                <div>
+                  <span>Nueva cobertura hasta</span>
+                  <strong>{{ formatFechaRenovacion(contratoForm['fecha_vencimiento']) }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="renewal-total-card"
+              [class.renewal-total-card-loading]="calculandoRenovacion()"
+              [attr.aria-busy]="calculandoRenovacion()"
+              aria-label="Total a pagar de la renovación">
+              <div class="renewal-total-main">
+                <span>Total a pagar</span>
+                <strong class="renewal-total-value" aria-live="polite">
+                  <span class="renewal-total-amount" [class.renewal-total-amount-hidden]="calculandoRenovacion()">
+                    {{ montoContratoStr }}
+                  </span>
+                  @if (calculandoRenovacion()) {
+                    <span class="renewal-total-loading">
+                      <span class="renewal-total-spinner" aria-hidden="true"></span>
+                      Calculando monto
+                    </span>
+                  }
+                </strong>
+              </div>
+              <div class="renewal-total-caption">
+                <span class="renewal-total-icon" aria-hidden="true">
+                  <re-icon name="file-text" width="24" height="24"></re-icon>
+                </span>
+                <p>
+                  Incluye {{ renovacionCalculada()?.periodos ?? 1 }}
+                  {{ (renovacionCalculada()?.periodos ?? 1) === 1 ? 'anualidad vencida' : 'anualidades vencidas' }}
+                  más recargos correspondientes.
+                </p>
+              </div>
+            </div>
+
+            @if (renovacionCalculada()?.detalle?.length) {
+              <details class="renewal-calculation" [class.renewal-calculation-loading]="calculandoRenovacion()" open>
+                <summary>
+                  <span>Detalle del cálculo</span>
+                  <re-icon name="chevron-down" width="16" height="16"></re-icon>
+                </summary>
+                <div class="renewal-calculation-grid">
+                  @for (monto of renovacionCalculada()!.detalle; track $index) {
+                    <div class="renewal-calculation-item">
+                      <span>Año {{ $index + 1 }}</span>
+                      <strong>{{ formatCLP(monto) }}</strong>
+                    </div>
+                  }
+                </div>
+              </details>
+            }
+
+            @if (descuentoRenovacion != null) {
+              <div class="renewal-discount-note">
+                Descuento especial aplicado: <strong>{{ descuentoRenovacion }}%</strong>
+              </div>
+            }
+
+            <div class="renewal-fields">
+              <div class="form-field">
+                <label>Medio de pago <span aria-hidden="true">*</span></label>
+                <div class="renewal-control renewal-select-control">
+                  <re-icon name="credit-card" width="18" height="18"></re-icon>
+                  <select [ngModel]="contratoForm['forma_pago']" (ngModelChange)="onFormaPagoRenovacionChange($event)">
+                    @for (f of formasPago; track f.id) {
+                      <option [value]="f.nombre">{{ f.nombre }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+              <div class="form-field">
+                <label>N° de boleta <span aria-hidden="true">*</span></label>
+                <input type="text" [(ngModel)]="contratoForm['numero_comprobante']" placeholder="Ingresa el número de boleta" />
+              </div>
+            </div>
           } @else {
             <div class="renovacion-policy">
               <div>
@@ -561,65 +716,10 @@
                 <strong>1 anualidad desde la fecha de pago</strong>
               </div>
               <div>
-                <span class="renovacion-policy-label">Recargo fijo</span>
-                <strong>{{ esRenovacionContrato ? '6%' : '6% en la próxima renovación' }}</strong>
+                <span class="renovacion-policy-label">Recargo</span>
+                <strong>según % vigente en la próxima renovación</strong>
               </div>
-              @if (esRenovacionContrato && descuentoRenovacion != null) {
-                <div>
-                  <span class="renovacion-policy-label">Descuento especial</span>
-                  <strong class="renovacion-descuento-activo">{{ descuentoRenovacion }}%</strong>
-                </div>
-              }
-              @if (esRenovacionContrato) {
-                <div>
-                  <span class="renovacion-policy-label">Cálculo</span>
-                  @if (descuentoRenovacion != null) {
-                    <strong>{{ formatCLP(montoBaseRenovacion) }} + 6% − {{ descuentoRenovacion }}%</strong>
-                  } @else {
-                    <strong>{{ formatCLP(montoBaseRenovacion) }} + 6%</strong>
-                  }
-                </div>
-              }
             </div>
-            @if (esRenovacionContrato) {
-              <div class="renewal-period">
-                <div class="renewal-date-card">
-                  <span>Pago efectivo</span>
-                  <strong>{{ contratoForm['fecha_pago'] | date:'dd/MM/yyyy' }}</strong>
-                </div>
-                <span class="renewal-period-arrow" aria-hidden="true">→</span>
-                <div class="renewal-date-card">
-                  <span>Nueva cobertura hasta</span>
-                  <strong>{{ contratoForm['fecha_vencimiento'] | date:'dd/MM/yyyy' }}</strong>
-                </div>
-              </div>
-              <div class="renewal-fields">
-                <div class="form-field renewal-total-field">
-                  <label>Total a pagar *</label>
-                  <input
-                    type="text"
-                    inputmode="numeric"
-                    class="input-display input-display-total"
-                    [value]="montoContratoStr"
-                    (input)="onMontoContratoInput($any($event.target).value)"
-                    (blur)="onMontoContratoBlur()"
-                    aria-label="Total a pagar de la renovación"
-                  />
-                </div>
-                <div class="form-field">
-                  <label>Medio de pago *</label>
-                  <select [ngModel]="contratoForm['forma_pago']" (ngModelChange)="onFormaPagoRenovacionChange($event)">
-                    @for (f of formasPago; track f.id) {
-                      <option [value]="f.nombre">{{ f.nombre }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="form-field">
-                  <label>N° de boleta *</label>
-                  <input type="text" [(ngModel)]="contratoForm['numero_comprobante']" placeholder="Ingresa el número de boleta" />
-                </div>
-              </div>
-            } @else {
               <div class="form-grid-2col">
                 <div class="form-field">
                   <label>Fecha de pago *</label>
@@ -654,14 +754,16 @@
                   <div class="input-display">{{ nombreCompleto }}</div>
                 </div>
               </div>
-            }
           }
         </div>
 
         <div class="modal-footer">
           <button class="btn-cancel" (click)="cerrarModalContrato()">Cancelar</button>
           <button class="btn-save" (click)="solicitarGuardarContrato()"
-            [disabled]="loadingContrato || !contratoForm['fecha_pago'] || !contratoForm['fecha_vencimiento'] || !contratoForm['valor_renovacion'] || !contratoForm['forma_pago'] || (esRenovacionContrato && !contratoForm['numero_comprobante'].trim()) || savingContrato">
+            [disabled]="loadingContrato || calculandoRenovacion() || !contratoForm['fecha_pago'] || !contratoForm['fecha_vencimiento'] || !contratoForm['valor_renovacion'] || !contratoForm['forma_pago'] || (esRenovacionContrato && !contratoForm['numero_comprobante'].trim()) || savingContrato">
+            @if (esRenovacionContrato) {
+              <re-icon name="lock" width="17" height="17"></re-icon>
+            }
             {{ savingContrato ? 'Generando...' : (esRenovacionContrato ? 'Confirmar renovación' : 'Generar contrato') }}
           </button>
         </div>

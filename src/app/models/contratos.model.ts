@@ -32,3 +32,20 @@ export interface ContratoPaginatedResult {
   limit: number;
   totalPages: number;
 }
+
+export interface CalcularRenovacionItem {
+  valorRenovacion: number;
+  descuentoPorcentaje: number | null;
+  formaPago: string;
+  fechaVencimiento: string;
+}
+
+export interface RenovacionCalculada {
+  periodos: number;
+  /** Monto compuesto de cada período (largo = periodos), antes de descuento. */
+  detalle: number[];
+  subtotal: number;
+  recargo: number;
+  total: number;
+  fechaVencimientoNueva: string;
+}
